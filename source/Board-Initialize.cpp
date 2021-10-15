@@ -2,6 +2,28 @@
 
 #include <random>
 
+ull Board::SquareHashes[64][16];
+ull Board::ExtraHashes[256];
+ull Board::TurnHash;
+
+void Board::initializeGlobals()
+{
+	std::mt19937 eng(111111ull);
+	std::uniform_int_distribution<ull> distr;
+	for (int i = 0; i < 64; ++i)
+	{
+		for (int j = 0; j < 16; ++j)
+		{
+			Board::SquareHashes[i][j] = distr(eng);
+		}
+	}
+	for (int i = 0; i < 256; ++i)
+	{
+		Board::ExtraHashes[i] = distr(eng);
+	}
+	Board::TurnHash = distr(eng);
+}
+
 Board::Board()
 :
 blacksTurn(false),
@@ -18,20 +40,6 @@ plyNumber(0)
 	{
 		fullBoard[i] = 0;
 	}
-	std::mt19937 eng(111111ull);
-	std::uniform_int_distribution<ull> distr;
-	for (int i = 0; i < 64; ++i)
-	{
-		for (int j = 0; j < 16; ++j)
-		{
-			SquareHashes[i][j] = distr(eng);
-		}
-	}
-	for (int i = 0; i < 256; ++i)
-	{
-		ExtraHashes[i] = distr(eng);
-	}
-	TurnHash = distr(eng);
 }
 
 void Board::resetHash()
@@ -39,8 +47,8 @@ void Board::resetHash()
 	hash = 0ull;
 	for (int i = 0; i < 64; ++i)
 	{
-		hash ^= SquareHashes[i][fullBoard[i]];
+		hash ^= Board::SquareHashes[i][fullBoard[i]];
 	}
-	hash ^= ExtraHashes[extraInfo];
-	hash ^= blacksTurn * TurnHash;
+	hash ^= Board::ExtraHashes[extraInfo];
+	hash ^= blacksTurn * Board::TurnHash;
 }

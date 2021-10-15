@@ -28,6 +28,13 @@ typedef ull BitBoard;
 
 struct Board
 {
+	static ull SquareHashes[64][16];
+
+	static ull ExtraHashes[256];
+	static ull TurnHash;
+
+	static void initializeGlobals();
+
 	bool blacksTurn;
 	uc extraInfo;
 	uc plySinceLastPawnOrCapture;
@@ -37,11 +44,6 @@ struct Board
 
 	BitBoard pieceBoards[16];
 	uc fullBoard[64];
-
-	ull SquareHashes[64][16];
-
-	ull ExtraHashes[256];
-	ull TurnHash;
 
 	ull hash;
 

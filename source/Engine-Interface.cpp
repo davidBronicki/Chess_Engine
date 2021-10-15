@@ -32,7 +32,7 @@ uc algebraicToIndex(std::string square)
 	return 'f' - square[0] + 8 * ('8' - square[1]);
 }
 
-void Engine::ioLoop()
+void Engine::run()
 {
 	while (true)
 	{
@@ -41,6 +41,11 @@ void Engine::ioLoop()
 		handleString(inputLine);
 		if (quitFlag)
 			return;
+		if (goFlag)
+		{
+			goFlag = false;
+			calculationThread = thread(Engine::calculationLoop, this);
+		}
 	}
 }
 
@@ -126,6 +131,8 @@ void Engine::handleString(string inputLine)
 				*/
 				cout << "id author bronicki" << endl;
 				cout << "uciok" << endl;
+				if (!Engine::globalsReady)
+					Engine::initializeGlobals();
 				return;
 			}
 			else if (item == "isready")
@@ -141,6 +148,8 @@ void Engine::handleString(string inputLine)
 				This command must always be answered with "readyok" and can be sent also when the engine is calculating
 				in which case the engine should also immediately answer with "readyok" without stopping the search.
 				*/
+				if (!Engine::globalsReady)
+					Engine::initializeGlobals();
 				cout << "readyok" << endl;
 				return;
 			}

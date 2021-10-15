@@ -4,6 +4,13 @@
 
 using namespace std;
 
+bool Engine::globalsReady = false;
+
+void Engine::initializeGlobals()
+{
+	Board::initializeGlobals();
+}
+
 Engine::Engine()
 :
 	interfaceParsingTokens("[ \\t]"),
@@ -111,23 +118,4 @@ void Engine::resetCongregateData()
 
 	board->pieceBoards[Piece::IndexAll] = board->pieceBoards[Piece::Black] | board->pieceBoards[Piece::White];
 	board->pieceBoards[Piece::IndexNone] = ~board->pieceBoards[Piece::IndexAll];
-}
-
-void run_io_loop(Engine* engine)
-{
-	engine->ioLoop();
-}
-
-void run_calculation_loop(Engine* engine)
-{
-	engine->calculationLoop();
-}
-
-void Engine::run()
-{
-	thread ioThread(run_io_loop, this);
-	thread calcThread(run_calculation_loop, this);
-
-	ioThread.join();
-	calcThread.join();
 }

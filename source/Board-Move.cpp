@@ -84,14 +84,15 @@ Move Board::constructMove(uc sourceSquare, uc targetSquare, uc moveType)
 		deltaExtraInfo |= extraInfo & (Extra::Black_Short | Extra::Black_Long);
 		return standardMove;
 	}
+	return {0, 0, 0, 0, 0, 0, 0};
 }
 
 void Board::performMove(Move move)
 {
-	hash ^= ExtraHashes[extraInfo]
-		^ SquareHashes[move.sourceSquare][fullBoard[move.sourceSquare]]
-		^ SquareHashes[move.targetSquare][fullBoard[move.targetSquare]]
-		^ TurnHash;
+	hash ^= Board::ExtraHashes[extraInfo]
+		^ Board::SquareHashes[move.sourceSquare][fullBoard[move.sourceSquare]]
+		^ Board::SquareHashes[move.targetSquare][fullBoard[move.targetSquare]]
+		^ Board::TurnHash;
 	BitBoard sourceBoard = indexToBitBoard(move.sourceSquare);
 	BitBoard targetBoard = indexToBitBoard(move.targetSquare);
 	switch (move.moveType)
@@ -185,17 +186,17 @@ void Board::performMove(Move move)
 	++plyNumber;
 
 	resetFullOccupancy(pieceBoards);
-	hash ^= ExtraHashes[extraInfo]
-		^ SquareHashes[move.sourceSquare][fullBoard[move.sourceSquare]]
-		^ SquareHashes[move.targetSquare][fullBoard[move.targetSquare]];
+	hash ^= Board::ExtraHashes[extraInfo]
+		^ Board::SquareHashes[move.sourceSquare][fullBoard[move.sourceSquare]]
+		^ Board::SquareHashes[move.targetSquare][fullBoard[move.targetSquare]];
 }
 
 void Board::reverseMove(Move move)
 {
-	hash ^= ExtraHashes[extraInfo]
-		^ SquareHashes[move.sourceSquare][fullBoard[move.sourceSquare]]
-		^ SquareHashes[move.targetSquare][fullBoard[move.targetSquare]]
-		^ TurnHash;
+	hash ^= Board::ExtraHashes[extraInfo]
+		^ Board::SquareHashes[move.sourceSquare][fullBoard[move.sourceSquare]]
+		^ Board::SquareHashes[move.targetSquare][fullBoard[move.targetSquare]]
+		^ Board::TurnHash;
 	BitBoard sourceBoard = indexToBitBoard(move.sourceSquare);
 	BitBoard targetBoard = indexToBitBoard(move.targetSquare);
 	blacksTurn = !blacksTurn;
@@ -286,7 +287,7 @@ void Board::reverseMove(Move move)
 	}
 	
 	resetFullOccupancy(pieceBoards);
-	hash ^= ExtraHashes[extraInfo]
-		^ SquareHashes[move.sourceSquare][fullBoard[move.sourceSquare]]
-		^ SquareHashes[move.targetSquare][fullBoard[move.targetSquare]];
+	hash ^= Board::ExtraHashes[extraInfo]
+		^ Board::SquareHashes[move.sourceSquare][fullBoard[move.sourceSquare]]
+		^ Board::SquareHashes[move.targetSquare][fullBoard[move.targetSquare]];
 }

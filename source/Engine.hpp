@@ -3,6 +3,7 @@
 #include <string>
 #include <regex>
 #include <memory>
+#include <thread>
 
 #include "Board.hpp"
 
@@ -61,30 +62,44 @@ class HashTable
 
 class Engine
 {
+	static bool globalsReady;
+	
+
+	//uci required parameters and flags
 	bool goFlag, stopFlag, quitFlag, debugFlag;
 	bool ponderFlag, mateSearchFlag, infiniteFlag;
 	int moveTime, wTime, bTime, wInc, bInc, movesToGo, maxDepth, maxNodes;
 
+	//custom parameters
+	int keepNStacks;
+
+	//state variables
 	std::shared_ptr<Board> board;
 	HashTable hashTable;
 
-	int keepNStacks;
 	std::vector<Move> currentMoveStack;
 	std::vector<std::vector<Move>> bestMoveStacks;
 
+	std::thread calculationThread;
+
+	//io variables
 	std::regex interfaceParsingTokens;
 	std::regex fenParsingTokens;
 	void handleString(std::string inputLine);
+
+	//parameters set when io calls go. need to be reset when stopping
 	void resetGoFlags();
 
-	public:
-	Engine();
-	void run();
-	void ioLoop();
-	void calculationLoop();
+	static void calculationLoop(Engine* engine);
 
 	void initPos();
 	void initPos(std::string positionString);
 	void resetCongregateData();
 	Move makeMove(uc startIndex, uc endIndex, char promotion);
+
+	public:
+	static void initializeGlobals();
+
+	Engine();
+	void run();
 };

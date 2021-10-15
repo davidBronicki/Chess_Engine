@@ -2,21 +2,11 @@
 
 using namespace std;
 
-void Engine::calculationLoop()
+void Engine::calculationLoop(Engine* engine)
 {
-	while (true)
+	while (!engine->quitFlag && !engine->stopFlag)
 	{
-		if (quitFlag) return;
-		if (stopFlag)
-		{
-			goFlag = false;
-			stopFlag = false;
-
-			//TODO
-		}
-		if (goFlag)
-		{
-			//TODO
-		}
+		//TODO
 	}
+	engine->stopFlag = false;
 }
