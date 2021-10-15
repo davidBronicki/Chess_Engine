@@ -35,6 +35,24 @@ struct Board
 	static ull ExtraHashes[256];
 	static ull TurnHash;
 
+	static BitBoard KnightMoves[64];
+	static BitBoard RookMoves[4][64];
+	static BitBoard DiagMoves[4][64];
+
+	enum Directions : char
+	{
+		Up = 0,
+		UpLeft = 0,
+		Right = 1,
+		UpRight = 1,
+		Down = 2,
+		DownRight = 2,
+		Left = 3,
+		DownLeft = 3
+	};
+
+	static BitBoard KingMoves[64];
+
 	static void initializeGlobals();
 
 	bool blacksTurn;
