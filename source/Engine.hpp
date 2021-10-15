@@ -6,20 +6,32 @@
 #include <thread>
 
 #include "Board.hpp"
+#include "EvalTypes.hpp"
 
 std::vector<std::string> tokenize(
 	const std::string& str,
 	const std::regex& re);
 
 uc algebraicToIndex(std::string square);
+std::string indexToAlgebraic(uc index);
+std::string moveToAlgebraic(Move move);
 
 struct HashBoard
 {
 	ull hash;
-	float eval;
-	uc plyToMate;
-	us plyNumber;
-	us plySearchDepth;
+	Value eval;
+	Move bestResponse;
+
+	short totalPlyDepth;
+	int uses;
+	short lastUseSearch;
+
+	enum CutType : uc
+	{
+		leaf,
+		alphaCut,
+		betaCut
+	} cutType;
 };
 
 class HashTable
@@ -63,21 +75,38 @@ class HashTable
 class Engine
 {
 	static bool globalsReady;
-	
 
+	static void calculationLoop(Engine* engine);
+
+	static std::tuple<Value, std::vector<Move>> quiescentSearch(Engine* engine, Move move,
+		Value alpha, Value beta);
+
+	static std::tuple<Value, std::vector<Move>> nonQuiescentSearch(Engine* engine, Move move,
+		Value alpha, Value beta,
+		short searchDepth);
+
+	public:
+	static void initializeGlobals();
+
+	private:
+	
 	//uci required parameters and flags
 	bool goFlag, stopFlag, quitFlag, debugFlag;
 	bool ponderFlag, mateSearchFlag, infiniteFlag;
 	int moveTime, wTime, bTime, wInc, bInc, movesToGo, maxDepth, maxNodes;
 
+	inline bool good(){return !stopFlag && !quitFlag;}
+
 	//custom parameters
-	int keepNStacks;
+	short keepNStacks;//keep best N lines
+	short depthWalkValue;//initial search depth when deep searching
+	short cores;//number of calculation threads to use
 
 	//state variables
 	std::shared_ptr<Board> board;
 	HashTable hashTable;
+	short searchIter;
 
-	std::vector<Move> currentMoveStack;
 	std::vector<std::vector<Move>> bestMoveStacks;
 
 	std::thread calculationThread;
@@ -90,15 +119,12 @@ class Engine
 	//parameters set when io calls go. need to be reset when stopping
 	void resetGoFlags();
 
-	static void calculationLoop(Engine* engine);
-
 	void initPos();
 	void initPos(std::string positionString);
 	void resetCongregateData();
 	Move makeMove(uc startIndex, uc endIndex, char promotion);
 
 	public:
-	static void initializeGlobals();
 
 	Engine();
 	void run();

@@ -19,7 +19,8 @@ Engine::Engine()
 	stopFlag(false),
 	debugFlag(false),
 	hashTable(1ull << 15),
-	keepNStacks(1)
+	keepNStacks(1),
+	depthWalkValue(4)
 {
 }
 

@@ -8,6 +8,8 @@
 	fullBoard[sourceSquare], static_cast<uc>(fullBoard[sourceSquare] ^ (newPiece)),\
 	deltaExtraInfo, static_cast<uc>(nextIrreversiblePly ^ plySinceLastPawnOrCapture)}
 
+Move nonMove{MoveType::NullMove, 0, 0, 0, 0, 0, 0};
+
 inline uc rookChecks(uc sourceSquare, uc targetSquare)
 {
 	uc output = 0;
@@ -97,6 +99,10 @@ void Board::performMove(Move move)
 	BitBoard targetBoard = indexToBitBoard(move.targetSquare);
 	switch (move.moveType)
 	{
+		case MoveType::NullMove:
+		if (move.deltaPawnOrCapturePly == 0)//non-move, no state change
+			return;
+		break;//null move, need to advance ply
 		case MoveType::EnPassant:
 		{
 			uc enPassantSquare = (0b111000 & move.sourceSquare)
@@ -205,6 +211,10 @@ void Board::reverseMove(Move move)
 	--plyNumber;
 	switch (move.moveType)
 	{
+		case MoveType::NullMove:
+		if (move.deltaPawnOrCapturePly == 0)//non-move, no state change
+			return;
+		break;//null move, need to backstep ply
 		case MoveType::EnPassant:
 		{
 			uc enPassantSquare = (0b111000 & move.sourceSquare)
@@ -290,4 +300,9 @@ void Board::reverseMove(Move move)
 	hash ^= Board::ExtraHashes[extraInfo]
 		^ Board::SquareHashes[move.sourceSquare][fullBoard[move.sourceSquare]]
 		^ Board::SquareHashes[move.targetSquare][fullBoard[move.targetSquare]];
+}
+
+std::vector<Move> Board::generateLegalMoves() const
+{
+	return std::vector<Move>();
 }

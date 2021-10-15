@@ -15,6 +15,8 @@ struct Move
 	uc deltaPawnOrCapturePly;
 };
 
+extern Move nonMove;
+
 inline Move nullMove(uc fiftyMovePly)
 {
 	return {
@@ -38,7 +40,7 @@ struct Board
 	bool blacksTurn;
 	uc extraInfo;
 	uc plySinceLastPawnOrCapture;
-	us plyNumber;
+	short plyNumber;
 
 	std::vector<Move> moveStack;
 
@@ -53,6 +55,8 @@ struct Board
 	void resetHash();
 
 	Move constructMove(uc sourceSquare, uc targetSquare, uc moveType);
+
+	std::vector<Move> generateLegalMoves() const;
 
 	void performMove(Move move);
 	void reverseMove(Move move);

@@ -32,6 +32,33 @@ uc algebraicToIndex(std::string square)
 	return 'f' - square[0] + 8 * ('8' - square[1]);
 }
 
+string indexToAlgebraic(uc index)
+{
+	return {static_cast<char>('f' - index % 8),
+		static_cast<char>('8' - index / 8)};
+}
+
+string moveToAlgebraic(Move move)
+{
+	string promoString = "";
+	switch (move.moveType)
+	{
+		case MoveType::PromoQueen:
+		promoString = "q";
+		break;
+		case MoveType::PromoRook:
+		promoString = "r";
+		break;
+		case MoveType::PromoBishop:
+		promoString = "b";
+		break;
+		case MoveType::PromoKnight:
+		promoString = "n";
+		break;
+	}
+	return indexToAlgebraic(move.sourceSquare) + indexToAlgebraic(move.targetSquare) + promoString;
+}
+
 void Engine::run()
 {
 	while (true)
@@ -41,6 +68,11 @@ void Engine::run()
 		handleString(inputLine);
 		if (quitFlag)
 			return;
+		if (stopFlag)
+		{
+			calculationThread.join();
+			stopFlag = false;
+		}
 		if (goFlag)
 		{
 			goFlag = false;
@@ -85,19 +117,19 @@ Move Engine::makeMove(uc startIndex, uc endIndex, char promotion)
 	{
 		switch (promotion)
 		{
-			case Piece::Queen:
+			case 'q':
 			moveType = MoveType::PromoQueen;
 			break;
 			
-			case Piece::Rook:
+			case 'r':
 			moveType = MoveType::PromoRook;
 			break;
 			
-			case Piece::Bishop:
+			case 'b':
 			moveType = MoveType::PromoBishop;
 			break;
 			
-			case Piece::Knight:
+			case 'n':
 			moveType = MoveType::PromoKnight;
 			break;
 		}
