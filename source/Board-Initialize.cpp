@@ -165,11 +165,11 @@ void Board::initializeGlobals()
 
 Board::Board()
 :
-blacksTurn(false),
-extraInfo(Extra::Black_Long | Extra::Black_Short
-	| Extra::White_Long | Extra::White_Short),
-plySinceLastPawnOrCapture(0),
-plyNumber(0)
+	blacksTurn(false),
+	extraInfo(Extra::Black_Long | Extra::Black_Short
+		| Extra::White_Long | Extra::White_Short),
+	plySinceLastPawnOrCapture(0),
+	plyNumber(0)
 {
 	for (int i = 0; i < 16; ++i)
 	{
@@ -190,4 +190,36 @@ void Board::resetHash()
 	}
 	hash ^= Board::ExtraHashes[extraInfo];
 	hash ^= blacksTurn * Board::TurnHash;
+}
+
+void Board::resetCongregateData()
+{
+	pieceBoards[Piece::Black] = 0;
+	pieceBoards[Piece::White] = 0;
+	pieceBoards[Piece::IndexAll] = 0;
+	pieceBoards[Piece::IndexNone] = 0;
+	for (int i = 1; i < 8; ++i)
+	{
+		pieceBoards[Piece::Black] |= pieceBoards[Piece::Black | (i << 1)];
+		pieceBoards[Piece::White] |= pieceBoards[Piece::White | (i << 1)];
+	}
+
+	pieceBoards[Piece::IndexAll] = pieceBoards[Piece::Black] | pieceBoards[Piece::White];
+	pieceBoards[Piece::IndexNone] = ~pieceBoards[Piece::IndexAll];
+}
+
+void Board::initPieceBoards()
+{
+	for (int i = 0; i < 16; ++i)
+	{
+		pieceBoards[i] = 0ull;
+	}
+	for (int i = 0; i < 64; ++i)
+	{
+		if (fullBoard[i])
+		{
+			pieceBoards[i] |= 1ull << i;
+		}
+	}
+	resetCongregateData();
 }

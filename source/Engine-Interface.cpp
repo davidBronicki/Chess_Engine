@@ -29,13 +29,13 @@ vector<string> tokenize(
 
 uc algebraicToIndex(std::string square)
 {
-	return 'f' - square[0] + 8 * ('8' - square[1]);
+	return square[0] - 'a' + 8 * (square[1] - '1');
 }
 
 string indexToAlgebraic(uc index)
 {
-	return {static_cast<char>('f' - index % 8),
-		static_cast<char>('8' - index / 8)};
+	return {static_cast<char>('a' + index % 8),
+		static_cast<char>('1' + index / 8)};
 }
 
 string moveToAlgebraic(Move move)
@@ -64,15 +64,15 @@ void Engine::run()
 	while (true)
 	{
 		string inputLine;
-		cin >> inputLine;
+		getline(cin, inputLine);
 		handleString(inputLine);
-		if (quitFlag)
-			return;
 		if (stopFlag)
 		{
 			calculationThread.join();
 			stopFlag = false;
 		}
+		if (quitFlag)
+			return;
 		if (goFlag)
 		{
 			goFlag = false;
@@ -86,14 +86,14 @@ Move Engine::makeMove(uc startIndex, uc endIndex, char promotion)
 	uc moveType = MoveType::Normal;
 	if (promotion == 0)
 	{
-		if ((bool)(board->fullBoard[startIndex] ^ Piece::Pawn) 
-			&& (bool)((startIndex - endIndex) % 8)
-			&& (bool)(board->fullBoard[endIndex] == 0))
+		if ((bool)(board->fullBoard[startIndex] ^ Piece::Pawn)//pawn move
+			&& (startIndex - endIndex) % 2//capture move
+			&& (board->fullBoard[endIndex] == 0))//going to an empty square
 		{
 			moveType = MoveType::EnPassant;
 		}
-		else if ((bool)(board->fullBoard[startIndex] ^ Piece::King)
-			&& ((startIndex - endIndex) % 4) == 2)
+		else if ((bool)(board->fullBoard[startIndex] ^ Piece::King)//king move
+			&& ((startIndex - endIndex) % 4) == 2)//moved two squares
 		{
 			//castling, need to figure out which one
 			switch (endIndex)
@@ -143,6 +143,8 @@ void Engine::handleString(string inputLine)
 		inputLine,
 		interfaceParsingTokens
 	);
+
+	std::cout << tokenizedLine.size() << std::endl;
 
 	string state = "base";
 
@@ -339,7 +341,7 @@ void Engine::handleString(string inputLine)
 		{
 			if (item == "0000")
 			{
-				board->performMove(nullMove(board->plySinceLastPawnOrCapture));
+				board->performMove(board->constructMove(0, 0, MoveType::NullMove));
 			}
 			else
 			{

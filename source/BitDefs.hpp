@@ -18,11 +18,12 @@ namespace Piece
 	Bishop	 =	0b1100,
 	Queen	 =	0b1110,
 
-	Team	 =	0b0001,
-	Sliding	 =	0b1000,
-	Occupied =	0b1110,
-	IndexAll =	0b1000,
-	IndexNone=	0b1001};
+	Team	 =	0b0001,//mask to get team
+	Sliding	 =	0b1000,//mask to check if slidy
+	Occupied =	0b1110,//mask to see if square is occupied
+
+	IndexAll =	0b1000,//index labelling the "all pieces" bit board
+	IndexNone=	0b1001};//index labelling the "no pieces" bit board
 }
 
 namespace Extra
@@ -61,4 +62,30 @@ namespace MoveType
 	WhiteLong,
 	BlackLong,
 	NullMove};
+}
+
+namespace
+{
+	ull leftMoveMask[8]	=
+	{
+		0xffffffffffffffffull,
+		0x7f7f7f7f7f7f7f7full,
+		0x3f3f3f3f3f3f3f3full,
+		0x1f1f1f1f1f1f1f1full,
+		0x0f0f0f0f0f0f0f0full,
+		0x0707070707070707ull,
+		0x0303030303030303ull,
+		0x0101010101010101ull
+	};
+	ull rightMoveMask[8] =
+	{
+		0xffffffffffffffffull,
+		0xfefefefefefefefeull,
+		0xfcfcfcfcfcfcfcfcull,
+		0xf8f8f8f8f8f8f8f8ull,
+		0xf0f0f0f0f0f0f0f0ull,
+		0xe0e0e0e0e0e0e0e0ull,
+		0xc0c0c0c0c0c0c0c0ull,
+		0x8080808080808080ull
+	};
 }

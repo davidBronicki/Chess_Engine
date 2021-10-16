@@ -1,6 +1,6 @@
 #include "Engine.hpp"
 
-#include "EngineState.hpp"
+// #include "EngineState.hpp"
 
 #include <math.h>
 #include <algorithm>
@@ -69,15 +69,15 @@ tuple<Value, vector<Move>> Engine::nonQuiescentSearch(Engine* engine, Move move,
 		board.reverseMove(move);
 	}
 
-	sort(indexList.data(), &indexList.back(), [values](short a, short b){return values[a] > values[b];});
+	sort(indexList.begin(), indexList.end(), [values](short a, short b){return values[a] > values[b];});
 
 	return {values[indexList[0]], reverseMoveStacks[indexList[0]]};
 }
 
 void Engine::calculationLoop(Engine* engine)
 {
-	Value alpha(Value{-HUGE_VAL});
-	Value beta(Value{HUGE_VAL});
+	Value alpha(Value{-HUGE_VALF});
+	Value beta(Value{HUGE_VALF});
 	Value value;
 	short searchDepth = engine->infiniteFlag || engine->maxDepth == 0 ?
 		INT16_MAX :

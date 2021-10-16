@@ -40,7 +40,11 @@ class HashTable
 	size_t size;
 	size_t occupancy;
 	public:
-	HashTable(size_t tableSize): table{new HashBoard[tableSize]{}}{}
+	HashTable(size_t tableSize)
+	:
+		table{new HashBoard[tableSize]{}},
+		size(tableSize)
+	{}
 	~HashTable(){delete[] table;}
 
 	HashTable(HashTable const&) = delete;
@@ -121,7 +125,6 @@ class Engine
 
 	void initPos();
 	void initPos(std::string positionString);
-	void resetCongregateData();
 	Move makeMove(uc startIndex, uc endIndex, char promotion);
 
 	public:

@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.0)
 project(CHESS_ENGINE CXX)
 
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -fvar-tracking")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 # set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_BUILD_TYPE Release)
+# set(CMAKE_BUILD_TYPE Release)
 
 
 find_package(Threads REQUIRED)
