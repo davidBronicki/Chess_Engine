@@ -82,12 +82,11 @@ class Engine
 
 	static void calculationLoop(Engine* engine);
 
-	static std::tuple<Value, std::vector<Move>> quiescentSearch(Engine* engine, Move move,
+	static std::tuple<Value, std::vector<Move>> quiescentSearch(Engine* engine,
 		Value alpha, Value beta);
 
-	static std::tuple<Value, std::vector<Move>> nonQuiescentSearch(Engine* engine, Move move,
-		Value alpha, Value beta,
-		short searchDepth);
+	static std::tuple<Value, std::vector<Move>> nonQuiescentSearch(Engine* engine,
+		Value alpha, Value beta, short searchDepth);
 
 	public:
 	static void initializeGlobals();

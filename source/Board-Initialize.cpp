@@ -219,7 +219,7 @@ void Board::initPieceBoards()
 	{
 		if (fullBoard[i])
 		{
-			pieceBoards[i] |= indexToBitBoard(i);
+			pieceBoards[fullBoard[i]] |= indexToBitBoard(i);
 		}
 	}
 	resetCongregateData();

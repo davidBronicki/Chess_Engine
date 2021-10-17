@@ -69,17 +69,6 @@ namespace
 	ull leftMoveMask[8]	=
 	{
 		0xffffffffffffffffull,
-		0x7f7f7f7f7f7f7f7full,
-		0x3f3f3f3f3f3f3f3full,
-		0x1f1f1f1f1f1f1f1full,
-		0x0f0f0f0f0f0f0f0full,
-		0x0707070707070707ull,
-		0x0303030303030303ull,
-		0x0101010101010101ull
-	};
-	ull rightMoveMask[8] =
-	{
-		0xffffffffffffffffull,
 		0xfefefefefefefefeull,
 		0xfcfcfcfcfcfcfcfcull,
 		0xf8f8f8f8f8f8f8f8ull,
@@ -87,5 +76,16 @@ namespace
 		0xe0e0e0e0e0e0e0e0ull,
 		0xc0c0c0c0c0c0c0c0ull,
 		0x8080808080808080ull
+	};
+	ull rightMoveMask[8] =
+	{
+		0xffffffffffffffffull,
+		0x7f7f7f7f7f7f7f7full,
+		0x3f3f3f3f3f3f3f3full,
+		0x1f1f1f1f1f1f1f1full,
+		0x0f0f0f0f0f0f0f0full,
+		0x0707070707070707ull,
+		0x0303030303030303ull,
+		0x0101010101010101ull
 	};
 }

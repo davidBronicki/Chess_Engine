@@ -32,11 +32,6 @@ void Engine::initPos()
 
 void Engine::initPos(string fenBoard)
 {
-	for (int i = 0; i < 16; ++i)
-	{
-		board->pieceBoards[i] = BitBoard{0ull};
-	}
-
 	vector<string> tokenizedLine = tokenize(
 		fenBoard,
 		fenParsingTokens
@@ -50,52 +45,40 @@ void Engine::initPos(string fenBoard)
 			{
 				case 'p':
 				board->fullBoard[8*(7 - i) + j] = Piece::Pawn | Piece::Black;
-				board->pieceBoards[Piece::Pawn | Piece::Black] |= indexToBitBoard(8 * (7 - i) + j);
 				break;
 				case 'r':
 				board->fullBoard[8*(7 - i) + j] = Piece::Rook | Piece::Black;
-				board->pieceBoards[Piece::Rook | Piece::Black] |= indexToBitBoard(8 * (7 - i) + j);
 				break;
 				case 'n':
 				board->fullBoard[8*(7 - i) + j] = Piece::Knight | Piece::Black;
-				board->pieceBoards[Piece::Knight | Piece::Black] |= indexToBitBoard(8 * (7 - i) + j);
 				break;
 				case 'b':
 				board->fullBoard[8*(7 - i) + j] = Piece::Bishop | Piece::Black;
-				board->pieceBoards[Piece::Bishop | Piece::Black] |= indexToBitBoard(8 * (7 - i) + j);
 				break;
 				case 'q':
 				board->fullBoard[8*(7 - i) + j] = Piece::Queen | Piece::Black;
-				board->pieceBoards[Piece::Queen | Piece::Black] |= indexToBitBoard(8 * (7 - i) + j);
 				break;
 				case 'k':
 				board->fullBoard[8*(7 - i) + j] = Piece::King | Piece::Black;
-				board->pieceBoards[Piece::King | Piece::Black] |= indexToBitBoard(8 * (7 - i) + j);
 				break;
 
 				case 'P':
 				board->fullBoard[8*(7 - i) + j] = Piece::Pawn | Piece::White;
-				board->pieceBoards[Piece::Pawn | Piece::White] |= indexToBitBoard(8 * (7 - i) + j);
 				break;
 				case 'R':
 				board->fullBoard[8*(7 - i) + j] = Piece::Rook | Piece::White;
-				board->pieceBoards[Piece::Rook | Piece::White] |= indexToBitBoard(8 * (7 - i) + j);
 				break;
 				case 'N':
 				board->fullBoard[8*(7 - i) + j] = Piece::Knight | Piece::White;
-				board->pieceBoards[Piece::Knight | Piece::White] |= indexToBitBoard(8 * (7 - i) + j);
 				break;
 				case 'B':
 				board->fullBoard[8*(7 - i) + j] = Piece::Bishop | Piece::White;
-				board->pieceBoards[Piece::Bishop | Piece::White] |= indexToBitBoard(8 * (7 - i) + j);
 				break;
 				case 'Q':
 				board->fullBoard[8*(7 - i) + j] = Piece::Queen | Piece::White;
-				board->pieceBoards[Piece::Queen | Piece::White] |= indexToBitBoard(8 * (7 - i) + j);
 				break;
 				case 'K':
 				board->fullBoard[8*(7 - i) + j] = Piece::King | Piece::White;
-				board->pieceBoards[Piece::King | Piece::White] |= indexToBitBoard(8 * (7 - i) + j);
 				break;
 
 				default:

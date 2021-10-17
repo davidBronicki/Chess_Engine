@@ -23,34 +23,34 @@ inline BitBoard shiftLeft(
 	BitBoard board,
 	uc shift)
 {
-	return (board & leftMoveMask[shift]) << shift;
+	return (board & leftMoveMask[shift]) >> shift;
 }
 
 inline BitBoard shiftRight(
 	BitBoard board,
 	uc shift)
 {
-	return (board & rightMoveMask[shift]) >> shift;
+	return (board & rightMoveMask[shift]) << shift;
 }
 
 inline constexpr BitBoard shiftUp(
 	BitBoard board,
 	uc shift)
 {
-	return board >>= (shift * 8);
+	return board <<= (shift * 8);
 }
 
 inline constexpr BitBoard shiftDown(
 	BitBoard board,
 	uc shift)
 {
-	return board <<= (shift * 8);
+	return board >>= (shift * 8);
 }
 
 inline constexpr BitBoard indexToBitBoard(
 	uc boardIndex)
 {
-	return BitBoard{1ull << boardIndex};
+	return BitBoard{boardIndex < 64 ? 1ull << boardIndex : 0ull};
 }
 
 inline constexpr int firstIndex(
@@ -65,7 +65,7 @@ inline constexpr int lastIndex(
 	return board == 0 ? 64 : 63 - __builtin_clzll(board);
 }
 
-inline constexpr int popCount(
+inline constexpr int cardinality(
 	BitBoard board)
 {
 	return board == 0 ? 64 : __builtin_popcountll(board);

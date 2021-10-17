@@ -16,10 +16,10 @@
 
 #define genSlideMoves_ForwardScanning(slideBoards)\
 	{\
-		BitBoard moveScan = DiagMoves[UpLeft][i];\
+		BitBoard moveScan = slideBoards[i];\
 		int firstHit = firstIndex(boardIntersect(moveScan, pieceBoards[Piece::IndexAll]));\
-		BitBoard moveScanFromHit = DiagMoves[UpLeft][firstHit];\
-		BitBoard selfCaptureBoard = (1ull << firstHit) & pieceBoards[blacksTurn];\
+		BitBoard moveScanFromHit = firstHit == 64 ? 0ull : slideBoards[firstHit];\
+		BitBoard selfCaptureBoard = boardIntersect(indexToBitBoard(firstHit), pieceBoards[blacksTurn]);\
 		BitBoard availableMovesBoard = moveScan ^ moveScanFromHit ^ selfCaptureBoard;\
 		boardLoop(availableMovesBoard, copyBoard2, j)\
 		{\
@@ -29,10 +29,10 @@
 
 #define genSlideMoves_BackwardScanning(slideBoards)\
 	{\
-		BitBoard moveScan = DiagMoves[UpLeft][i];\
+		BitBoard moveScan = slideBoards[i];\
 		int firstHit = lastIndex(boardIntersect(moveScan, pieceBoards[Piece::IndexAll]));\
-		BitBoard moveScanFromHit = firstHit == 64 ? 0ull : DiagMoves[UpLeft][firstHit];\
-		BitBoard selfCaptureBoard = boardIntersect((1ull << firstHit), pieceBoards[blacksTurn]);\
+		BitBoard moveScanFromHit = firstHit == 64 ? 0ull : slideBoards[firstHit];\
+		BitBoard selfCaptureBoard = boardIntersect(indexToBitBoard(firstHit), pieceBoards[blacksTurn]);\
 		BitBoard availableMovesBoard = moveScan ^ moveScanFromHit ^ selfCaptureBoard;\
 		boardLoop(availableMovesBoard, copyBoard2, j)\
 		{\
@@ -539,26 +539,6 @@ void Board::addBishopMoves(std::vector<Move>& currentMoves) const
 
 		genSlideMoves_BackwardScanning(DiagMoves[DownLeft]);
 		genSlideMoves_BackwardScanning(DiagMoves[DownRight]);
-		// BitBoard moveScan = DiagMoves[UpLeft][i];
-		// int firstHit = firstIndex(boardIntersect(moveScan, pieceBoards[Piece::IndexAll]));
-		// BitBoard moveScanFromHit = DiagMoves[UpLeft][firstHit];
-		// BitBoard selfCaptureBoard = (1ull << firstHit) & pieceBoards[blacksTurn];
-		// boardLoop(moveScan ^ moveScanFromHit ^ selfCaptureBoard, copyBoard2, j)
-		// {
-		// 	currentMoves.push_back(constructMove(i, j, MoveType::Normal));
-		// }
-		// boardLoop(DiagMoves[UpRight][i], copyBoard2, j)
-		// {
-		// 	currentMoves.push_back(constructMove(i, j, MoveType::Normal));
-		// }
-		// boardLoop(DiagMoves[DownLeft][i], copyBoard2, j)
-		// {
-		// 	currentMoves.push_back(constructMove(i, j, MoveType::Normal));
-		// }
-		// boardLoop(DiagMoves[DownRight][i], copyBoard2, j)
-		// {
-		// 	currentMoves.push_back(constructMove(i, j, MoveType::Normal));
-		// }
 	}
 }
 void Board::addRookMoves(std::vector<Move>& currentMoves) const
