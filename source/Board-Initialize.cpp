@@ -198,8 +198,9 @@ void Board::resetCongregateData()
 	pieceBoards[Piece::White] = 0;
 	pieceBoards[Piece::IndexAll] = 0;
 	pieceBoards[Piece::IndexNone] = 0;
-	for (int i = 1; i < 8; ++i)
+	for (int i = 1; i < 8; ++i)//0 isnt a piece
 	{
+		//4 isn't a piece, but is currently set to zero
 		pieceBoards[Piece::Black] |= pieceBoards[Piece::Black | (i << 1)];
 		pieceBoards[Piece::White] |= pieceBoards[Piece::White | (i << 1)];
 	}
@@ -218,7 +219,7 @@ void Board::initPieceBoards()
 	{
 		if (fullBoard[i])
 		{
-			pieceBoards[i] |= 1ull << i;
+			pieceBoards[i] |= indexToBitBoard(i);
 		}
 	}
 	resetCongregateData();

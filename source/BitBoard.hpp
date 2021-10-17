@@ -56,17 +56,17 @@ inline constexpr BitBoard indexToBitBoard(
 inline constexpr int firstIndex(
 	BitBoard board)
 {
-	return __builtin_ctzll(board);
+	return board == 0 ? 64 : __builtin_ctzll(board);
 }
 
 inline constexpr int lastIndex(
 	BitBoard board)
 {
-	return 63 - __builtin_clzll(board);
+	return board == 0 ? 64 : 63 - __builtin_clzll(board);
 }
 
 inline constexpr int popCount(
 	BitBoard board)
 {
-	return __builtin_popcountll(board);
+	return board == 0 ? 64 : __builtin_popcountll(board);
 }
