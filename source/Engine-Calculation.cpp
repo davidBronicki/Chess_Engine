@@ -109,7 +109,7 @@ tuple<Value, vector<Move>> Engine::nonQuiescentSearch(Engine* engine,
 
 void Engine::calculationLoop(Engine* engine)
 {
-	engine->bestMoveStacks = std::vector<std::vector<Move>>();
+	engine->bestMoveStacks.resize(0);
 
 	Value alpha(Value{-HUGE_VALF});
 	Value beta(Value{HUGE_VALF});

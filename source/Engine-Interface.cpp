@@ -81,7 +81,7 @@ void Engine::run()
 	}
 }
 
-Move Engine::makeMove(uc startIndex, uc endIndex, char promotion)
+Move Engine::buildMoveFromFragments(uc startIndex, uc endIndex, char promotion)
 {
 	uc moveType = MoveType::Normal;
 	if (promotion == 0)
@@ -134,7 +134,7 @@ Move Engine::makeMove(uc startIndex, uc endIndex, char promotion)
 			break;
 		}
 	}
-	return board->constructMove(startIndex, endIndex, moveType);
+	return board->buildMoveFromContext(startIndex, endIndex, moveType);
 }
 
 void Engine::handleString(string inputLine)
@@ -143,8 +143,6 @@ void Engine::handleString(string inputLine)
 		inputLine,
 		interfaceParsingTokens
 	);
-
-	std::cout << tokenizedLine.size() << std::endl;
 
 	string state = "base";
 
@@ -174,6 +172,7 @@ void Engine::handleString(string inputLine)
 			else if (item == "go")
 			{
 				resetGoFlags();
+				resetIntermediateValues();
 				goFlag = true;
 				state = "go";
 			}
@@ -215,14 +214,18 @@ void Engine::handleString(string inputLine)
 			if (item == "startpos")
 			{
 				initPos();
-				state = "position moves";
+				state = "check for moves";
 			}
-			else
+			else if (item == "fen")
 			{
-				//first fen entry: board state
-				initPos(item);
-				state = "fen 2";
+				state = "fen 1";
 			}
+		}
+		else if (state == "fen 1")
+		{
+			//first fen entry: board state
+			initPos(item);
+			state = "fen 2";
 		}
 		else if (state == "fen 2")
 		{
@@ -232,6 +235,7 @@ void Engine::handleString(string inputLine)
 		}
 		else if (state == "fen 3")
 		{
+			board->extraInfo = 0;
 			//castling
 			for (auto&& c : item)
 			{
@@ -249,8 +253,6 @@ void Engine::handleString(string inputLine)
 		else if (state == "fen 4")
 		{
 			//en passant square
-				board->extraInfo = board->extraInfo & Extra::CastleInfo;
-
 			if (item != "-")
 			{
 				board->extraInfo |= (algebraicToIndex(item) & Extra::EnPassantFile)
@@ -273,13 +275,18 @@ void Engine::handleString(string inputLine)
 
 			board->plyNumber = stoll(item) * 2 + board->blacksTurn - 2;
 
-			state = "position moves";
+			state = "check for moves";
+		}
+		else if (state == "check for moves")
+		{
+			if (item == "moves")
+				state = "position moves";
 		}
 		else if (state == "position moves")
 		{
 			if (item == "0000")
 			{
-				board->performMove(board->constructMove(0, 0, MoveType::NullMove));
+				board->performMove(board->buildMoveFromContext(0, 0, MoveType::NullMove));
 			}
 			else
 			{
@@ -287,11 +294,11 @@ void Engine::handleString(string inputLine)
 				uc endIndex = algebraicToIndex(item.substr(2, 2));
 				if (item.size() == 5)
 				{
-					board->performMove(makeMove(startIndex, endIndex, item[4]));
+					board->performMove(buildMoveFromFragments(startIndex, endIndex, item[4]));
 				}
 				else
 				{
-					board->performMove(makeMove(startIndex, endIndex, 0));
+					board->performMove(buildMoveFromFragments(startIndex, endIndex, 0));
 				}
 			}
 		}
@@ -407,6 +414,11 @@ void Engine::resetGoFlags()
 	movesToGo = 0;
 	maxDepth = 0;
 	maxNodes = 0;
+}
+
+void Engine::resetIntermediateValues()
+{
+	bestMoveStacks.resize(0);
 }
 
 /*
@@ -566,6 +578,7 @@ These are all the command the engine gets from the interface.
 	* winc <x>
 		white increment per move in mseconds if x > 0
 	* binc <x>
+	void resetIntermediateValues();
 		black increment per move in mseconds if x > 0
 	* movestogo <x>
       there are x moves to the next time control,

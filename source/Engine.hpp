@@ -121,10 +121,12 @@ class Engine
 
 	//parameters set when io calls go. need to be reset when stopping
 	void resetGoFlags();
+	//need to work with a new move stack
+	void resetIntermediateValues();
 
 	void initPos();
 	void initPos(std::string positionString);
-	Move makeMove(uc startIndex, uc endIndex, char promotion);
+	Move buildMoveFromFragments(uc startIndex, uc endIndex, char promotion);
 
 	public:
 

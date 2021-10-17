@@ -28,6 +28,10 @@ Engine::Engine()
 void Engine::initPos()
 {
 	initPos("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+	board->extraInfo = 0;
+	board->blacksTurn = false;
+	board->plyNumber = 0;
+	board->plySinceLastPawnOrCapture = 0;
 }
 
 void Engine::initPos(string fenBoard)

@@ -23,7 +23,7 @@
 		BitBoard availableMovesBoard = moveScan ^ moveScanFromHit ^ selfCaptureBoard;\
 		boardLoop(availableMovesBoard, copyBoard2, j)\
 		{\
-			currentMoves.push_back(constructMove(i, j, MoveType::Normal));\
+			currentMoves.push_back(buildMoveFromContext(i, j, MoveType::Normal));\
 		}\
 	}
 
@@ -36,7 +36,7 @@
 		BitBoard availableMovesBoard = moveScan ^ moveScanFromHit ^ selfCaptureBoard;\
 		boardLoop(availableMovesBoard, copyBoard2, j)\
 		{\
-			currentMoves.push_back(constructMove(i, j, MoveType::Normal));\
+			currentMoves.push_back(buildMoveFromContext(i, j, MoveType::Normal));\
 		}\
 	}
 
@@ -65,7 +65,7 @@ inline uc rookChecks(uc sourceSquare, uc targetSquare)
 	return output;
 }
 
-Move Board::constructMove(uc sourceSquare, uc targetSquare, uc moveType) const
+Move Board::buildMoveFromContext(uc sourceSquare, uc targetSquare, uc moveType) const
 {
 	uc nextIrreversiblePly = plySinceLastPawnOrCapture + 1;
 	uc deltaExtraInfo = extraInfo & Extra::EnPassantInfo;
@@ -401,41 +401,41 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 			
 			if (rank == 6 && fullBoard[i - 16] == 0)
 			{
-				currentMoves.push_back(constructMove(i, i - 16, MoveType::Normal));
+				currentMoves.push_back(buildMoveFromContext(i, i - 16, MoveType::Normal));
 			}
 			if (rank == 1)
 			{
-				currentMoves.push_back(constructMove(i, i - 8, MoveType::PromoQueen));
-				currentMoves.push_back(constructMove(i, i - 8, MoveType::PromoRook));
-				currentMoves.push_back(constructMove(i, i - 8, MoveType::PromoBishop));
-				currentMoves.push_back(constructMove(i, i - 8, MoveType::PromoKnight));
+				currentMoves.push_back(buildMoveFromContext(i, i - 8, MoveType::PromoQueen));
+				currentMoves.push_back(buildMoveFromContext(i, i - 8, MoveType::PromoRook));
+				currentMoves.push_back(buildMoveFromContext(i, i - 8, MoveType::PromoBishop));
+				currentMoves.push_back(buildMoveFromContext(i, i - 8, MoveType::PromoKnight));
 				continue;
 			}
-			currentMoves.push_back(constructMove(i, i - 8, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, i - 8, MoveType::Normal));
 		}
 		boardLoop(rightCaptureReady, copyBoard, i)
 		{
 			if (i / 8 == 1)
 			{
-				currentMoves.push_back(constructMove(i, i - 7, MoveType::PromoQueen));
-				currentMoves.push_back(constructMove(i, i - 7, MoveType::PromoRook));
-				currentMoves.push_back(constructMove(i, i - 7, MoveType::PromoBishop));
-				currentMoves.push_back(constructMove(i, i - 7, MoveType::PromoKnight));
+				currentMoves.push_back(buildMoveFromContext(i, i - 7, MoveType::PromoQueen));
+				currentMoves.push_back(buildMoveFromContext(i, i - 7, MoveType::PromoRook));
+				currentMoves.push_back(buildMoveFromContext(i, i - 7, MoveType::PromoBishop));
+				currentMoves.push_back(buildMoveFromContext(i, i - 7, MoveType::PromoKnight));
 				continue;
 			}
-			currentMoves.push_back(constructMove(i, i - 7, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, i - 7, MoveType::Normal));
 		}
 		boardLoop(leftCaptureReady, copyBoard, i)
 		{
 			if (i / 8 == 1)
 			{
-				currentMoves.push_back(constructMove(i, i - 9, MoveType::PromoQueen));
-				currentMoves.push_back(constructMove(i, i - 9, MoveType::PromoRook));
-				currentMoves.push_back(constructMove(i, i - 9, MoveType::PromoBishop));
-				currentMoves.push_back(constructMove(i, i - 9, MoveType::PromoKnight));
+				currentMoves.push_back(buildMoveFromContext(i, i - 9, MoveType::PromoQueen));
+				currentMoves.push_back(buildMoveFromContext(i, i - 9, MoveType::PromoRook));
+				currentMoves.push_back(buildMoveFromContext(i, i - 9, MoveType::PromoBishop));
+				currentMoves.push_back(buildMoveFromContext(i, i - 9, MoveType::PromoKnight));
 				continue;
 			}
-			currentMoves.push_back(constructMove(i, i - 9, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, i - 9, MoveType::Normal));
 		}
 		if (extraInfo & Extra::EnPassantAvailable)
 		{
@@ -444,11 +444,11 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 			{
 				if (i % 8 == (extraInfo & Extra::EnPassantFile) - 1)
 				{
-					currentMoves.push_back(constructMove(i, i - 7, MoveType::EnPassant));
+					currentMoves.push_back(buildMoveFromContext(i, i - 7, MoveType::EnPassant));
 				}
 				if (i % 8 == (extraInfo & Extra::EnPassantFile) + 1)
 				{
-					currentMoves.push_back(constructMove(i, i - 9, MoveType::EnPassant));
+					currentMoves.push_back(buildMoveFromContext(i, i - 9, MoveType::EnPassant));
 				}
 			}
 		}
@@ -467,41 +467,41 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 			
 			if (rank == 1 && fullBoard[i + 16] == 0)
 			{
-				currentMoves.push_back(constructMove(i, i + 16, MoveType::Normal));
+				currentMoves.push_back(buildMoveFromContext(i, i + 16, MoveType::Normal));
 			}
 			if (rank == 7)
 			{
-				currentMoves.push_back(constructMove(i, i + 8, MoveType::PromoQueen));
-				currentMoves.push_back(constructMove(i, i + 8, MoveType::PromoRook));
-				currentMoves.push_back(constructMove(i, i + 8, MoveType::PromoBishop));
-				currentMoves.push_back(constructMove(i, i + 8, MoveType::PromoKnight));
+				currentMoves.push_back(buildMoveFromContext(i, i + 8, MoveType::PromoQueen));
+				currentMoves.push_back(buildMoveFromContext(i, i + 8, MoveType::PromoRook));
+				currentMoves.push_back(buildMoveFromContext(i, i + 8, MoveType::PromoBishop));
+				currentMoves.push_back(buildMoveFromContext(i, i + 8, MoveType::PromoKnight));
 				continue;
 			}
-			currentMoves.push_back(constructMove(i, i + 8, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, i + 8, MoveType::Normal));
 		}
 		boardLoop(rightCaptureReady, copyBoard, i)
 		{
 			if (i / 8 == 7)
 			{
-				currentMoves.push_back(constructMove(i, i + 9, MoveType::PromoQueen));
-				currentMoves.push_back(constructMove(i, i + 9, MoveType::PromoRook));
-				currentMoves.push_back(constructMove(i, i + 9, MoveType::PromoBishop));
-				currentMoves.push_back(constructMove(i, i + 9, MoveType::PromoKnight));
+				currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::PromoQueen));
+				currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::PromoRook));
+				currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::PromoBishop));
+				currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::PromoKnight));
 				continue;
 			}
-			currentMoves.push_back(constructMove(i, i + 9, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::Normal));
 		}
 		boardLoop(leftCaptureReady, copyBoard, i)
 		{
 			if (i / 8 == 7)
 			{
-				currentMoves.push_back(constructMove(i, i + 7, MoveType::PromoQueen));
-				currentMoves.push_back(constructMove(i, i + 7, MoveType::PromoRook));
-				currentMoves.push_back(constructMove(i, i + 7, MoveType::PromoBishop));
-				currentMoves.push_back(constructMove(i, i + 7, MoveType::PromoKnight));
+				currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::PromoQueen));
+				currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::PromoRook));
+				currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::PromoBishop));
+				currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::PromoKnight));
 				continue;
 			}
-			currentMoves.push_back(constructMove(i, i + 7, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::Normal));
 		}
 		if (extraInfo & Extra::EnPassantAvailable)
 		{
@@ -510,11 +510,11 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 			{
 				if (i % 8 == (extraInfo & Extra::EnPassantFile) - 1)
 				{
-					currentMoves.push_back(constructMove(i, i + 9, MoveType::EnPassant));
+					currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::EnPassant));
 				}
 				if (i % 8 == (extraInfo & Extra::EnPassantFile) + 1)
 				{
-					currentMoves.push_back(constructMove(i, i + 7, MoveType::EnPassant));
+					currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::EnPassant));
 				}
 			}
 		}
@@ -526,7 +526,7 @@ void Board::addKnightMoves(std::vector<Move>& currentMoves) const
 	{
 		boardLoop(boardIntersect(KnightMoves[i], ~pieceBoards[blacksTurn]), copyBoard2, j)
 		{
-			currentMoves.push_back(constructMove(i, j, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, j, MoveType::Normal));
 		}
 	}
 }
@@ -580,7 +580,7 @@ void Board::addKingMoves(std::vector<Move>& currentMoves) const
 		boardLoop(boardIntersect(KingMoves[i], ~pieceBoards[blacksTurn]), copyBoard2, j)
 		{
 			//need to check for danger
-			currentMoves.push_back(constructMove(i, j, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, j, MoveType::Normal));
 		}
 	}
 
@@ -593,22 +593,22 @@ void Board::addKingMoves(std::vector<Move>& currentMoves) const
 		{
 			if (extraInfo & Extra::Black_Long)
 			{
-				constructMove(7 * 8 + 4, 7 * 8 + 2, MoveType::BlackLong);
+				buildMoveFromContext(7 * 8 + 4, 7 * 8 + 2, MoveType::BlackLong);
 			}
 			if (extraInfo & Extra::Black_Short)
 			{
-				constructMove(7 * 8 + 4, 7 * 8 + 6, MoveType::BlackShort);
+				buildMoveFromContext(7 * 8 + 4, 7 * 8 + 6, MoveType::BlackShort);
 			}
 		}
 		else
 		{
 			if (extraInfo & Extra::White_Long)
 			{
-				constructMove(4, 2, MoveType::WhiteLong);
+				buildMoveFromContext(4, 2, MoveType::WhiteLong);
 			}
 			if (extraInfo & Extra::White_Short)
 			{
-				constructMove(4, 6, MoveType::WhiteShort);
+				buildMoveFromContext(4, 6, MoveType::WhiteShort);
 			}
 		}
 	}

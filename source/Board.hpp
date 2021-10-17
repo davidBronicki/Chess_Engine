@@ -63,7 +63,7 @@ struct Board
 	void resetCongregateData();
 	void initPieceBoards();
 
-	Move constructMove(uc sourceSquare, uc targetSquare, uc moveType) const;
+	Move buildMoveFromContext(uc sourceSquare, uc targetSquare, uc moveType) const;
 
 	std::vector<Move> generateLegalMoves() const;
 
