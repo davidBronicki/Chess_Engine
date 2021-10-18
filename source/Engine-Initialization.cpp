@@ -21,8 +21,8 @@ Engine::Engine()
 	hashTable(1 << 15),
 	board(make_shared<Board>()),
 	keepNStacks(1),
-	depthWalkValue(2),
-	quiescenceSearchDepth(6)
+	depthWalkValue(4),
+	quiescenceSearchDepth(4)
 {
 }
 

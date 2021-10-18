@@ -5,23 +5,23 @@
 struct Value
 {
 	float value;
-	short movesToMate;
+	short matePlyNumber;
 
-	Value():value(0), movesToMate(0){}
-	Value(float value):value(value), movesToMate(0){}
-	Value(float value, short movesToMate):value(value), movesToMate(movesToMate){}
+	Value():value(0), matePlyNumber(0){}
+	Value(float value):value(value), matePlyNumber(0){}
+	Value(float value, short movesToMate):value(value), matePlyNumber(movesToMate){}
 };
 
 inline bool operator==(Value a, Value b)
 {
-	return a.value == b.value && a.movesToMate == b.movesToMate;
+	return a.value == b.value && a.matePlyNumber == b.matePlyNumber;
 }
 
 inline bool operator>(Value a, Value b)
 {
 	return a.value > b.value
-		|| (a.value == HUGE_VALF && b.value == HUGE_VALF && a.movesToMate < b.movesToMate)
-		|| (a.value ==-HUGE_VALF && b.value ==-HUGE_VALF && a.movesToMate > b.movesToMate);
+		|| (a.value == HUGE_VALF && b.value == HUGE_VALF && a.matePlyNumber < b.matePlyNumber)
+		|| (a.value ==-HUGE_VALF && b.value ==-HUGE_VALF && a.matePlyNumber > b.matePlyNumber);
 }
 
 inline bool operator<(Value a, Value b)

@@ -83,11 +83,12 @@ tuple<Value, vector<Move>> Engine::quiescenceSearch(Engine* engine,
 	}
 
 	bool legalMoveExists = false;
+	bool nonQuiescentMoveExists = false;
 
 	vector<Move> moves(board.generateMoves());
 
-	vector<std::tuple<Value, vector<Move>>> valueStackPairs;
-	vector<short> indexList;
+	Value bestValue{board.blacksTurn ? HUGE_VALF : -HUGE_VALF, board.plyNumber};
+	vector<Move> bestMoveStack;
 	for (auto&& move : moves)
 	{
 		char temp = engine->nonQuiescentAdvance(move);
@@ -95,44 +96,50 @@ tuple<Value, vector<Move>> Engine::quiescenceSearch(Engine* engine,
 		if (temp != 2)
 			continue;
 
+		nonQuiescentMoveExists = true;
+
 		//TODO: alpha beta pruning
 
-		valueStackPairs.push_back(quiescenceSearch(
-			engine, alpha, beta, searchDepth - 1));
+		auto tempPair = quiescenceSearch(
+			engine, alpha, beta, searchDepth - 1);
 
-		if (isinf(get<0>(valueStackPairs.back()).value))
+		if (!board.blacksTurn)//move has been performed, so turn is flipped
 		{
-			++get<0>(valueStackPairs.back()).movesToMate;
+			if (get<0>(tempPair) < bestValue)
+			{
+				bestValue = get<0>(tempPair);
+				bestMoveStack = get<1>(tempPair);
+				bestMoveStack.push_back(move);
+			}
+			beta = min(beta, bestValue);
 		}
-
-
-		//TODO: actual hash board logic
-
-		//not guaranteed that the return move list will not be empty here...
-
-		// if (searchDepth > 1 && engine->hashTable.get(board.hash).hash == 0)
-		// 	engine->hashTable.set({board.hash,
-		// 		get<0>(valueStackPairs.back()),
-		// 		get<1>(valueStackPairs.back()).back(),
-		// 		board.plyNumber, 0, engine->searchIter, HashBoard::leaf});
-
-		get<1>(valueStackPairs.back()).push_back(move);
-		indexList.push_back(indexList.size());
+		else
+		{
+			if (get<0>(tempPair) > bestValue)
+			{
+				bestValue = get<0>(tempPair);
+				bestMoveStack = get<1>(tempPair);
+				bestMoveStack.push_back(move);
+			}
+			alpha = max(alpha, bestValue);
+		}
 		engine->back();
+		if (alpha >= beta)
+		{
+			return make_tuple(bestValue, bestMoveStack);
+		}
 	}
 
 	if (!legalMoveExists)//game has reached an end state
 	{
 		return {staleEval(board), {}};
 	}
-	if (valueStackPairs.size() == 0)//game has reached a quiescent position
+	if (nonQuiescentMoveExists)//game has reached a quiescent position
 	{
 		return {evaluate(board), {}};
 	}
 
-	sortPositions(board, valueStackPairs, indexList);
-
-	return valueStackPairs[indexList[0]];
+	return make_tuple(bestValue, bestMoveStack);
 }
 
 tuple<Value, vector<Move>> Engine::nonQuiescenceSearch(Engine* engine,
@@ -156,30 +163,46 @@ tuple<Value, vector<Move>> Engine::nonQuiescenceSearch(Engine* engine,
 
 	vector<Move> moves(board.generateMoves());
 
-	vector<tuple<Value, vector<Move>>> valueStackPairs;
-	vector<short> indexList;
+	Value bestValue{board.blacksTurn ? HUGE_VALF : -HUGE_VALF, board.plyNumber};
+	vector<Move> bestMoveStack;
+
+	bool legalMoveExists = false;
 	for (auto&& move : moves)
 	{
 		if (!engine->advance(move))
 			continue;
 
+		legalMoveExists = true;
+
 		//TODO: alpha beta pruning
 
-		valueStackPairs.push_back(nonQuiescenceSearch(
-			engine, alpha, beta, searchDepth - 1));
+		auto tempPair = nonQuiescenceSearch(
+			engine, alpha, beta, searchDepth - 1);
 
-		if (board.blacksTurn)
+		if (!board.blacksTurn)//move has been performed, so turn is flipped
 		{
-			beta = min(beta, get<0>(valueStackPairs.back()));
+			if (get<0>(tempPair) < bestValue)
+			{
+				bestValue = get<0>(tempPair);
+				bestMoveStack = get<1>(tempPair);
+				bestMoveStack.push_back(move);
+			}
+			beta = min(beta, bestValue);
 		}
 		else
 		{
-			alpha = max(alpha, get<0>(valueStackPairs.back()));
+			if (get<0>(tempPair) > bestValue)
+			{
+				bestValue = get<0>(tempPair);
+				bestMoveStack = get<1>(tempPair);
+				bestMoveStack.push_back(move);
+			}
+			alpha = max(alpha, bestValue);
 		}
+		engine->back();
 		if (alpha >= beta)
 		{
-			engine->back();
-			return valueStackPairs.back();
+			return make_tuple(bestValue, bestMoveStack);
 		}
 
 
@@ -192,20 +215,14 @@ tuple<Value, vector<Move>> Engine::nonQuiescenceSearch(Engine* engine,
 		// 		get<0>(valueStackPairs.back()),
 		// 		get<1>(valueStackPairs.back()).back(),
 		// 		board.plyNumber, 0, engine->searchIter, HashBoard::leaf});
-
-		get<1>(valueStackPairs.back()).push_back(move);
-		indexList.push_back(indexList.size());
-		engine->back();
 	}
 
-	if (valueStackPairs.size() == 0)//game has reached an end condition
+	if (!legalMoveExists)//game has reached an end condition
 	{
 		return {staleEval(board), {}};
 	}
 
-	sortPositions(board, valueStackPairs, indexList);
-
-	return valueStackPairs[indexList[0]];
+	return make_tuple(bestValue, bestMoveStack);
 }
 
 void Engine::calculationLoop(Engine* engine)

@@ -5,7 +5,7 @@
 	deltaExtraInfo, static_cast<uc>(nextIrreversiblePly ^ plySinceLastPawnOrCapture)}
 
 #define promoMove(newPiece) {moveType, sourceSquare, targetSquare,\
-	fullBoard[sourceSquare], static_cast<uc>(fullBoard[sourceSquare] ^ (newPiece)),\
+	fullBoard[sourceSquare], static_cast<uc>(fullBoard[targetSquare] ^ (newPiece)),\
 	deltaExtraInfo, static_cast<uc>(nextIrreversiblePly ^ plySinceLastPawnOrCapture)}
 
 #define boardLoop(bitBoard, copyBoard, index) for (ull copyBoard = (bitBoard), index = firstIndex((bitBoard));\
@@ -100,22 +100,22 @@ Move Board::buildMoveFromContext(uc sourceSquare, uc targetSquare, uc moveType) 
 		case MoveType::PromoQueen:
 		nextIrreversiblePly = 0;
 		deltaExtraInfo |= extraInfo & rookChecks(sourceSquare, targetSquare);
-		return promoMove(Piece::Queen | (blacksTurn * Piece::Black));
+		return promoMove(Piece::Queen | blacksTurn);
 
 		case MoveType::PromoRook:
 		nextIrreversiblePly = 0;
 		deltaExtraInfo |= extraInfo & rookChecks(sourceSquare, targetSquare);
-		return promoMove(Piece::Rook | (blacksTurn * Piece::Black));
+		return promoMove(Piece::Rook | blacksTurn);
 
 		case MoveType::PromoBishop:
 		nextIrreversiblePly = 0;
 		deltaExtraInfo |= extraInfo & rookChecks(sourceSquare, targetSquare);
-		return promoMove(Piece::Bishop | (blacksTurn * Piece::Black));
+		return promoMove(Piece::Bishop | blacksTurn);
 
 		case MoveType::PromoKnight:
 		nextIrreversiblePly = 0;
 		deltaExtraInfo |= extraInfo & rookChecks(sourceSquare, targetSquare);
-		return promoMove(Piece::Knight | (blacksTurn * Piece::Black));
+		return promoMove(Piece::Knight | blacksTurn);
 
 		case MoveType::WhiteShort:
 		deltaExtraInfo |= extraInfo & (Extra::White_Short | Extra::White_Long);
