@@ -11,12 +11,12 @@ namespace Piece
 	enum names : uc{
 	White	 =	0b0000,
 	Black	 =	0b0001,
-	Pawn	 =	0b0010,
-	Knight	 =	0b0100,
-	King	 =	0b0110,
-	Rook	 =	0b1010,
-	Bishop	 =	0b1100,
-	Queen	 =	0b1110,
+	Pawn	 =	0b0010,//0x2
+	Knight	 =	0b0100,//0x4
+	King	 =	0b0110,//0x6
+	Rook	 =	0b1010,//0xa
+	Bishop	 =	0b1100,//0xc
+	Queen	 =	0b1110,//0xe
 
 	Team	 =	0b0001,//mask to get team
 	Sliding	 =	0b1000,//mask to check if slidy
@@ -62,6 +62,22 @@ namespace MoveType
 	WhiteLong,
 	BlackLong,
 	NullMove};
+}
+
+
+namespace Direction
+{
+	enum names : uc{
+	UpLeft,
+	Up,
+	UpRight,
+	Right,
+	DownRight,
+	Down,
+	DownLeft,
+	Left,
+	Knight,
+	None};
 }
 
 namespace

@@ -86,13 +86,13 @@ Move Engine::buildMoveFromFragments(uc startIndex, uc endIndex, char promotion)
 	uc moveType = MoveType::Normal;
 	if (promotion == 0)
 	{
-		if ((bool)(board->fullBoard[startIndex] ^ Piece::Pawn)//pawn move
+		if ((board->fullBoard[startIndex] & Piece::Occupied) == Piece::Pawn//pawn move
 			&& (startIndex - endIndex) % 2//capture move
 			&& (board->fullBoard[endIndex] == 0))//going to an empty square
 		{
 			moveType = MoveType::EnPassant;
 		}
-		else if ((bool)(board->fullBoard[startIndex] ^ Piece::King)//king move
+		else if ((board->fullBoard[startIndex] & Piece::Occupied) == Piece::King//king move
 			&& ((startIndex - endIndex) % 4) == 2)//moved two squares
 		{
 			//castling, need to figure out which one
@@ -286,7 +286,7 @@ void Engine::handleString(string inputLine)
 		{
 			if (item == "0000")
 			{
-				board->performMove(board->buildMoveFromContext(0, 0, MoveType::NullMove));
+				advance(board->buildMoveFromContext(0, 0, MoveType::NullMove));
 			}
 			else
 			{
@@ -294,11 +294,11 @@ void Engine::handleString(string inputLine)
 				uc endIndex = algebraicToIndex(item.substr(2, 2));
 				if (item.size() == 5)
 				{
-					board->performMove(buildMoveFromFragments(startIndex, endIndex, item[4]));
+					advance(buildMoveFromFragments(startIndex, endIndex, item[4]));
 				}
 				else
 				{
-					board->performMove(buildMoveFromFragments(startIndex, endIndex, 0));
+					advance(buildMoveFromFragments(startIndex, endIndex, 0));
 				}
 			}
 		}

@@ -112,6 +112,9 @@ class Engine
 
 	std::vector<std::vector<Move>> bestMoveStacks;
 
+	std::vector<Move> activeMoves;
+	std::vector<Hash> activeHashes;//3 move repetition tracking
+
 	std::thread calculationThread;
 
 	//io variables
@@ -127,6 +130,10 @@ class Engine
 	void initPos();
 	void initPos(std::string positionString);
 	Move buildMoveFromFragments(uc startIndex, uc endIndex, char promotion);
+
+	bool threeMoveRepetition();
+	bool advance(Move move);
+	void back();
 
 	public:
 

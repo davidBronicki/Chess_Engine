@@ -87,10 +87,10 @@ void Engine::initPos(string fenBoard)
 
 				default:
 				board->fullBoard[8*(7 - i) + j] = 0;
-				for (uc temp_j = j + 1; temp_j < c - '0'; ++temp_j)
+				for (int iter = 1; iter < c - '0'; ++iter)
 				{
 					++j;
-					board->fullBoard[8*(7 - i) + temp_j] = 0;
+					board->fullBoard[8*(7 - i) + j] = 0;
 				}
 			}
 			++j;

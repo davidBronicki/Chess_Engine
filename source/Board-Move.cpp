@@ -40,6 +40,9 @@
 		}\
 	}
 
+#define slideHitsForward(slideBoards, index) (slideBoards[index] ^ slideBoards[firstIndex(boardIntersect(slideBoards[index], pieceBoards[Piece::IndexAll]))])
+
+#define slideHitsBackward(slideBoards, index) (slideBoards[index] ^ slideBoards[lastIndex(boardIntersect(slideBoards[index], pieceBoards[Piece::IndexAll]))])
 
 Move nonMove{MoveType::NullMove, 0, 0, 0, 0, 0, 0};
 
@@ -88,7 +91,7 @@ Move Board::buildMoveFromContext(uc sourceSquare, uc targetSquare, uc moveType) 
 		deltaExtraInfo |= extraInfo & rookChecks(sourceSquare, targetSquare);
 		return standardMove;
 
-		case MoveType::EnPassant://fix this
+		case MoveType::EnPassant:
 		nextIrreversiblePly = 0;
 		return {moveType, sourceSquare, targetSquare,
 			fullBoard[sourceSquare], fullBoard[targetSquare + (blacksTurn ? 8 : -8)],
@@ -163,8 +166,6 @@ void Board::performMove(Move move)
 
 			pieceBoards[blacksTurn] ^= targetBoard | sourceBoard;
 			pieceBoards[!blacksTurn] ^= indexToBitBoard(enPassantSquare);
-
-			resetFullOccupancy(pieceBoards);
 
 			fullBoard[move.targetSquare] ^= move.deltaSource;
 			fullBoard[move.sourceSquare] ^= move.deltaSource;
@@ -247,6 +248,7 @@ void Board::performMove(Move move)
 	++plyNumber;
 
 	resetFullOccupancy(pieceBoards);
+
 	hash ^= Board::ExtraHashes[extraInfo]
 		^ Board::SquareHashes[move.sourceSquare][fullBoard[move.sourceSquare]]
 		^ Board::SquareHashes[move.targetSquare][fullBoard[move.targetSquare]];
@@ -287,8 +289,6 @@ void Board::reverseMove(Move move)
 
 			pieceBoards[blacksTurn] ^= targetBoard | sourceBoard;
 			pieceBoards[!blacksTurn] ^= indexToBitBoard(enPassantSquare);
-
-			resetFullOccupancy(pieceBoards);
 
 			fullBoard[move.targetSquare] ^= move.deltaSource;
 			fullBoard[move.sourceSquare] ^= move.deltaSource;
@@ -372,7 +372,7 @@ void Board::reverseMove(Move move)
 		^ Board::SquareHashes[move.targetSquare][fullBoard[move.targetSquare]];
 }
 
-std::vector<Move> Board::generateLegalMoves() const
+std::vector<Move> Board::generateMoves() const
 {
 	std::vector<Move> output;
 	addKnightMoves(output);
@@ -469,7 +469,7 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 			{
 				currentMoves.push_back(buildMoveFromContext(i, i + 16, MoveType::Normal));
 			}
-			if (rank == 7)
+			if (rank == 6)
 			{
 				currentMoves.push_back(buildMoveFromContext(i, i + 8, MoveType::PromoQueen));
 				currentMoves.push_back(buildMoveFromContext(i, i + 8, MoveType::PromoRook));
@@ -481,7 +481,7 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 		}
 		boardLoop(rightCaptureReady, copyBoard, i)
 		{
-			if (i / 8 == 7)
+			if (i / 8 == 6)
 			{
 				currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::PromoQueen));
 				currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::PromoRook));
@@ -493,7 +493,7 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 		}
 		boardLoop(leftCaptureReady, copyBoard, i)
 		{
-			if (i / 8 == 7)
+			if (i / 8 == 6)
 			{
 				currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::PromoQueen));
 				currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::PromoRook));
@@ -534,22 +534,22 @@ void Board::addBishopMoves(std::vector<Move>& currentMoves) const
 {
 	boardLoop(pieceBoards[Piece::Bishop | blacksTurn], copyBoard, i)
 	{
-		genSlideMoves_ForwardScanning(DiagMoves[UpLeft]);
-		genSlideMoves_ForwardScanning(DiagMoves[UpRight]);
+		genSlideMoves_ForwardScanning(SlideMoves[Direction::UpLeft]);
+		genSlideMoves_ForwardScanning(SlideMoves[Direction::UpRight]);
 
-		genSlideMoves_BackwardScanning(DiagMoves[DownLeft]);
-		genSlideMoves_BackwardScanning(DiagMoves[DownRight]);
+		genSlideMoves_BackwardScanning(SlideMoves[Direction::DownLeft]);
+		genSlideMoves_BackwardScanning(SlideMoves[Direction::DownRight]);
 	}
 }
 void Board::addRookMoves(std::vector<Move>& currentMoves) const
 {
 	boardLoop(pieceBoards[Piece::Rook | blacksTurn], copyBoard, i)
 	{
-		genSlideMoves_ForwardScanning(RookMoves[Up]);
-		genSlideMoves_ForwardScanning(RookMoves[Right]);
+		genSlideMoves_ForwardScanning(SlideMoves[Direction::Up]);
+		genSlideMoves_ForwardScanning(SlideMoves[Direction::Right]);
 
-		genSlideMoves_BackwardScanning(RookMoves[Down]);
-		genSlideMoves_BackwardScanning(RookMoves[Left]);
+		genSlideMoves_BackwardScanning(SlideMoves[Direction::Down]);
+		genSlideMoves_BackwardScanning(SlideMoves[Direction::Left]);
 	}
 }
 void Board::addQueenMoves(std::vector<Move>& currentMoves) const
@@ -558,19 +558,19 @@ void Board::addQueenMoves(std::vector<Move>& currentMoves) const
 	{
 		//diagonal moves
 
-		genSlideMoves_ForwardScanning(DiagMoves[UpLeft]);
-		genSlideMoves_ForwardScanning(DiagMoves[UpRight]);
+		genSlideMoves_ForwardScanning(SlideMoves[Direction::UpLeft]);
+		genSlideMoves_ForwardScanning(SlideMoves[Direction::UpRight]);
 
-		genSlideMoves_BackwardScanning(DiagMoves[DownLeft]);
-		genSlideMoves_BackwardScanning(DiagMoves[DownRight]);
+		genSlideMoves_BackwardScanning(SlideMoves[Direction::DownLeft]);
+		genSlideMoves_BackwardScanning(SlideMoves[Direction::DownRight]);
 
 		//rook moves
 
-		genSlideMoves_ForwardScanning(RookMoves[Up]);
-		genSlideMoves_ForwardScanning(RookMoves[Right]);
+		genSlideMoves_ForwardScanning(SlideMoves[Direction::Up]);
+		genSlideMoves_ForwardScanning(SlideMoves[Direction::Right]);
 
-		genSlideMoves_BackwardScanning(RookMoves[Down]);
-		genSlideMoves_BackwardScanning(RookMoves[Left]);
+		genSlideMoves_BackwardScanning(SlideMoves[Direction::Down]);
+		genSlideMoves_BackwardScanning(SlideMoves[Direction::Left]);
 	}
 }
 void Board::addKingMoves(std::vector<Move>& currentMoves) const
@@ -614,7 +614,79 @@ void Board::addKingMoves(std::vector<Move>& currentMoves) const
 	}
 }
 
-// #undef standardMove
-// #undef promoMove
-// #undef forwardBoardLoop
-// #undef backwardBoardLoop
+
+bool Board::inCheck() const
+{
+	int kingPos = firstIndex(pieceBoards[Piece::King | blacksTurn]);
+	return positionAttacked(kingPos, !blacksTurn);
+}
+bool Board::miscLegalityCheck(Move move) const
+{
+	switch (move.moveType)
+	{
+	case MoveType::BlackShort:
+	return !inCheck() && !positionAttacked(3 + 7 * 8, Piece::White);
+	case MoveType::BlackLong:
+	return !inCheck() && !positionAttacked(5 + 7 * 8, Piece::White);
+	case MoveType::WhiteShort:
+	return !inCheck() && !positionAttacked(3, Piece::Black);
+	case MoveType::WhiteLong:
+	return !inCheck() && !positionAttacked(5, Piece::Black);
+	
+	default:
+	return true;
+	}
+}
+bool Board::positionAttacked(int pos, bool byBlack) const
+{
+	BitBoard attacks = boardIntersect(
+		Board::KnightMoves[pos],
+		pieceBoards[Piece::Knight | byBlack]);
+	if (attacks != 0ull) return true;
+	
+
+	for (int i = 0; i < 8; ++i)
+	{
+		int hitIndex = i < 4 ?
+			firstIndex(boardIntersect(
+				SlideMoves[i][pos],
+				pieceBoards[Piece::IndexAll]
+			)) :
+			lastIndex(boardIntersect(
+				SlideMoves[i][pos],
+				pieceBoards[Piece::IndexAll]
+			));
+		if (boardIntersect(indexToBitBoard(hitIndex), pieceBoards[byBlack]))
+		{
+			if (i % 2) //rook move
+			{
+				if ((fullBoard[hitIndex] & Piece::Rook) == Piece::Rook)
+					return true;
+			}
+			else
+			{
+				if ((fullBoard[hitIndex] & Piece::Bishop) == Piece::Bishop)
+					return true;
+			}
+		}
+	}
+
+
+	BitBoard pawns = pieceBoards[Piece::Pawn | byBlack];
+
+	if (byBlack)
+	{
+		attacks = boardIntersect(indexToBitBoard(pos),
+			shiftDown(shiftRight(pawns, 1), 1) |
+			shiftDown(shiftLeft(pawns, 1), 1));
+	}
+	else
+	{
+		attacks = boardIntersect(indexToBitBoard(pos),
+			shiftUp(shiftRight(pawns, 1), 1) |
+			shiftUp(shiftLeft(pawns, 1), 1));
+	}
+	if (attacks != 0ull) return true;
+
+	return false;
+}

@@ -10,6 +10,17 @@ using namespace std;
 
 Value staleEval(Board const& board)//no moves possible, draw or death
 {
+	if (board.inCheck())
+	{
+		if (board.blacksTurn)
+		{
+			return Value(HUGE_VALF);
+		}
+		else
+		{
+			return Value(-HUGE_VALF);
+		}
+	}
 	return Value();
 }
 
@@ -27,7 +38,7 @@ Value evaluate(Board const& board)
 	value.value -= 3 * cardinality(board.pieceBoards[Piece::Bishop | Piece::Black]);
 	value.value -= 5 * cardinality(board.pieceBoards[Piece::Rook | Piece::Black]);
 	value.value -= 9 * cardinality(board.pieceBoards[Piece::Queen | Piece::Black]);
-	return Value();
+	return value;
 }
 
 tuple<Value, vector<Move>> Engine::quiescentSearch(Engine* engine,
@@ -42,9 +53,9 @@ tuple<Value, vector<Move>> Engine::quiescentSearch(Engine* engine,
 	Board& board(*engine->board);
 	
 	Value value = evaluate(board);
-	if (engine->hashTable.get(board.hash).hash == 0)
-		engine->hashTable.set({board.hash, value, nonMove,
-			board.plyNumber, 0, engine->searchIter, HashBoard::leaf});
+	// if (engine->hashTable.get(board.hash).hash == 0)
+	// 	engine->hashTable.set({board.hash, value, nonMove,
+	// 		board.plyNumber, 0, engine->searchIter, HashBoard::leaf});
 			
 	return {value, {}};
 }
@@ -55,25 +66,31 @@ tuple<Value, vector<Move>> Engine::nonQuiescentSearch(Engine* engine,
 {
 	if (!engine->good())
 	{
-		return {Value(), {nonMove}};
+		return {Value(), {}};
 	}
 	if (searchDepth == 0)
 		return quiescentSearch(engine, alpha, beta);
 	Board& board(*engine->board);
 
-	std::vector<Move> moves(board.generateLegalMoves());
-
-	if (moves.size() == 0)//game has reached an end condition
+	if (board.plySinceLastPawnOrCapture >= 100)
 	{
-		return {staleEval(board), {}};
+		//TODO: check for off-by-one issue
+		return {Value(), {}};
 	}
+	if (engine->threeMoveRepetition())
+	{
+		return {Value(), {}};
+	}
+
+	std::vector<Move> moves(board.generateMoves());
 
 	std::vector<std::tuple<Value, std::vector<Move>>> valueStackPairs;
 	std::vector<short> indexList;
 	for (auto&& move : moves)
 	{
-		board.performMove(move);
-		
+		if (!engine->advance(move))
+			continue;
+
 		//TODO: actual search
 
 		valueStackPairs.push_back(nonQuiescentSearch(
@@ -87,22 +104,40 @@ tuple<Value, vector<Move>> Engine::nonQuiescentSearch(Engine* engine,
 
 		//TODO: actual hash board logic
 
-		if (engine->hashTable.get(board.hash).hash == 0)
-			engine->hashTable.set({board.hash,
-				std::get<0>(valueStackPairs.back()),
-				std::get<1>(valueStackPairs.back()).back(),
-				board.plyNumber, 0, engine->searchIter, HashBoard::leaf});
-		
+		//not guaranteed that the return move list will not be empty here...
+
+		// if (searchDepth > 1 && engine->hashTable.get(board.hash).hash == 0)
+		// 	engine->hashTable.set({board.hash,
+		// 		std::get<0>(valueStackPairs.back()),
+		// 		std::get<1>(valueStackPairs.back()).back(),
+		// 		board.plyNumber, 0, engine->searchIter, HashBoard::leaf});
 
 		std::get<1>(valueStackPairs.back()).push_back(move);
 		indexList.push_back(indexList.size());
-		board.reverseMove(move);
+		engine->back();
 	}
 
-	sort(indexList.begin(), indexList.end(), [&valueStackPairs](short a, short b)
-		{
-			return std::get<0>(valueStackPairs[a]) > std::get<0>(valueStackPairs[b]);
-		});
+	if (valueStackPairs.size() == 0)//game has reached an end condition
+	{
+		return {staleEval(board), {}};
+	}
+
+	if (board.blacksTurn)//ascending order so lowest score is first (best for black)
+	{
+		sort(indexList.begin(), indexList.end(),
+			[&valueStackPairs](short a, short b)
+			{
+				return std::get<0>(valueStackPairs[a]) < std::get<0>(valueStackPairs[b]);
+			});
+	}
+	else//descending order so highest score is first (best for white)
+	{
+		sort(indexList.begin(), indexList.end(),
+			[&valueStackPairs](short a, short b)
+			{
+				return std::get<0>(valueStackPairs[a]) > std::get<0>(valueStackPairs[b]);
+			});
+	}
 
 	return valueStackPairs[indexList[0]];
 }
@@ -127,4 +162,38 @@ void Engine::calculationLoop(Engine* engine)
 	engine->stopFlag = true;
 	
 	cout << "bestmove " << moveToAlgebraic(engine->bestMoveStacks[0].back()) << endl;
+}
+
+
+bool Engine::advance(Move move)
+{
+	if (!board->miscLegalityCheck(move))
+		return false;
+	board->performMove(move);
+	if (board->positionAttacked(firstIndex(
+		board->pieceBoards[Piece::King | !board->blacksTurn]), board->blacksTurn))
+	{
+		board->reverseMove(move);
+		return false;
+	}
+	activeMoves.push_back(move);
+	activeHashes.push_back(board->hash);
+	return true;
+}
+void Engine::back()
+{
+	board->reverseMove(activeMoves.back());
+	activeMoves.pop_back();
+	activeHashes.pop_back();
+}
+bool Engine::threeMoveRepetition()
+{
+	//TODO: check off-by-one issues
+	int count = 0;
+	for (int i = 0; i < board->plySinceLastPawnOrCapture; i += 2)
+	{
+		if (activeHashes[activeHashes.size() - 1 - i] == activeHashes.back())
+			++count;
+	}
+	return count >= 2;
 }

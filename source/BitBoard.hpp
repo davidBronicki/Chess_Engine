@@ -68,5 +68,5 @@ inline constexpr int lastIndex(
 inline constexpr int cardinality(
 	BitBoard board)
 {
-	return board == 0 ? 64 : __builtin_popcountll(board);
+	return __builtin_popcountll(board);
 }

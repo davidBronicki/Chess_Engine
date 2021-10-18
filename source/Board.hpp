@@ -15,32 +15,23 @@ struct Move
 	uc deltaPawnOrCapturePly;
 };
 
+typedef ull Hash;
+
 extern Move nonMove;
 
 struct Board
 {
-	static ull SquareHashes[64][16];
+	static Hash SquareHashes[64][16];
 
-	static ull ExtraHashes[256];
-	static ull TurnHash;
+	static Hash ExtraHashes[256];
+	static Hash TurnHash;
 
 	static BitBoard KnightMoves[64];
-	static BitBoard RookMoves[4][64];
-	static BitBoard DiagMoves[4][64];
-
-	enum Directions : char
-	{
-		Up = 0,
-		UpLeft = 0,
-		Right = 1,
-		UpRight = 1,
-		Down = 2,
-		DownRight = 2,
-		Left = 3,
-		DownLeft = 3
-	};
+	static BitBoard SlideMoves[8][64];
 
 	static BitBoard KingMoves[64];
+
+	// static uc RelativeDirection[64][64];
 
 	static void initializeGlobals();
 
@@ -49,10 +40,23 @@ struct Board
 	uc plySinceLastPawnOrCapture;
 	short plyNumber;
 
-	std::vector<Move> moveStack;
+	// std::vector<Move> moveStack;
 
 	BitBoard pieceBoards[16];
 	uc fullBoard[64];
+
+	// bool inCheck;
+
+	// BitBoard diagThreatSquares[2][4];//each side and each direction
+	// BitBoard rookThreatSquares[2][4];//each side and each direction
+	// BitBoard knightThreatSquares[2];//each side
+	// BitBoard rightPawnThreatSquares[2];//each side
+	// BitBoard leftPawnThreatSquares[2];//each side
+	// BitBoard threatSquares[2];//each side, union of all previous plus king
+
+	// BitBoard diagPinnedPieces[2][4];//each side and each direction
+	// BitBoard rookPinnedPieces[2][4];//each side and each direction
+	// BitBoard pinnedPieces[2];//each side, union of all previous
 
 	ull hash;
 
@@ -65,7 +69,12 @@ struct Board
 
 	Move buildMoveFromContext(uc sourceSquare, uc targetSquare, uc moveType) const;
 
-	std::vector<Move> generateLegalMoves() const;
+	std::vector<Move> generateMoves() const;
+
+	// bool moveIsLegal(Move move) const;
+	bool inCheck() const;
+	bool miscLegalityCheck(Move move) const;
+	bool positionAttacked(int pos, bool byBlack) const;
 
 	void addPawnMoves(std::vector<Move>& currentMoves) const;
 	void addKnightMoves(std::vector<Move>& currentMoves) const;
