@@ -87,13 +87,13 @@ Move Engine::buildMoveFromFragments(uc startIndex, uc endIndex, char promotion)
 	if (promotion == 0)
 	{
 		if ((board->fullBoard[startIndex] & Piece::Occupied) == Piece::Pawn//pawn move
-			&& (startIndex - endIndex) % 2//capture move
+			&& static_cast<ul>(startIndex - endIndex) % 2//capture move
 			&& (board->fullBoard[endIndex] == 0))//going to an empty square
 		{
 			moveType = MoveType::EnPassant;
 		}
 		else if ((board->fullBoard[startIndex] & Piece::Occupied) == Piece::King//king move
-			&& ((startIndex - endIndex) % 4) == 2)//moved two squares
+			&& (static_cast<ul>(startIndex - endIndex) % 4) == 2)//moved two squares
 		{
 			//castling, need to figure out which one
 			switch (endIndex)

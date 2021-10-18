@@ -190,7 +190,8 @@ bool Engine::threeMoveRepetition()
 {
 	//TODO: check off-by-one issues
 	int count = 0;
-	for (int i = 0; i < board->plySinceLastPawnOrCapture; i += 2)
+	for (int i = 0; i < min(activeHashes.size(),
+		static_cast<size_t>(board->plySinceLastPawnOrCapture)); i += 2)
 	{
 		if (activeHashes[activeHashes.size() - 1 - i] == activeHashes.back())
 			++count;

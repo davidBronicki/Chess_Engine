@@ -79,7 +79,7 @@ Move Board::buildMoveFromContext(uc sourceSquare, uc targetSquare, uc moveType) 
 		if ((fullBoard[sourceSquare] & Piece::Occupied) == Piece::Pawn)
 		{
 			nextIrreversiblePly = 0;
-			if ((targetSquare - sourceSquare) / 8 % 2 == 0)//moved two squares
+			if (static_cast<us>(targetSquare - sourceSquare) / 8 % 2 == 0)//moved two squares
 			{
 				deltaExtraInfo ^= Extra::EnPassantAvailable;
 				deltaExtraInfo ^= sourceSquare % 8;
@@ -175,7 +175,7 @@ void Board::performMove(Move move)
 
 		case MoveType::BlackShort:
 		pieceBoards[Piece::King | Piece::Black] ^= targetBoard | sourceBoard;
-		pieceBoards[Piece::Rook | Piece::Black] ^= 0b10010000ull << (7 * 8);
+		pieceBoards[Piece::Rook | Piece::Black] ^= 0b10100000ull << (7 * 8);
 
 		pieceBoards[Piece::Black] ^= 0b11110000ull << (7 * 8);
 
@@ -187,7 +187,7 @@ void Board::performMove(Move move)
 
 		case MoveType::BlackLong:
 		pieceBoards[Piece::King | Piece::Black] ^= targetBoard | sourceBoard;
-		pieceBoards[Piece::Rook | Piece::Black] ^= 0b10001ull << (7 * 8);
+		pieceBoards[Piece::Rook | Piece::Black] ^= 0b1001ull << (7 * 8);
 
 		pieceBoards[Piece::Black] ^= 0b11101ull << (7 * 8);
 
@@ -199,7 +199,7 @@ void Board::performMove(Move move)
 
 		case MoveType::WhiteShort:
 		pieceBoards[Piece::King | Piece::White] ^= targetBoard | sourceBoard;
-		pieceBoards[Piece::Rook | Piece::White] ^= 0b10010000ull;
+		pieceBoards[Piece::Rook | Piece::White] ^= 0b10100000ull;
 
 		pieceBoards[Piece::White] ^= 0b11110000ull;
 
@@ -211,7 +211,7 @@ void Board::performMove(Move move)
 
 		case MoveType::WhiteLong:
 		pieceBoards[Piece::King | Piece::White] ^= targetBoard | sourceBoard;
-		pieceBoards[Piece::Rook | Piece::White] ^= 0b10001ull;
+		pieceBoards[Piece::Rook | Piece::White] ^= 0b1001ull;
 
 		pieceBoards[Piece::White] ^= 0b11101ull;
 
@@ -298,7 +298,7 @@ void Board::reverseMove(Move move)
 
 		case MoveType::BlackShort:
 		pieceBoards[Piece::King | Piece::Black] ^= targetBoard | sourceBoard;
-		pieceBoards[Piece::Rook | Piece::Black] ^= 0b10010000ull << (7 * 8);
+		pieceBoards[Piece::Rook | Piece::Black] ^= 0b10100000ull << (7 * 8);
 
 		pieceBoards[Piece::Black] ^= 0b11110000ull << (7 * 8);
 
@@ -310,7 +310,7 @@ void Board::reverseMove(Move move)
 
 		case MoveType::BlackLong:
 		pieceBoards[Piece::King | Piece::Black] ^= targetBoard | sourceBoard;
-		pieceBoards[Piece::Rook | Piece::Black] ^= 0b10001ull << (7 * 8);
+		pieceBoards[Piece::Rook | Piece::Black] ^= 0b1001ull << (7 * 8);
 
 		pieceBoards[Piece::Black] ^= 0b11101ull << (7 * 8);
 
@@ -322,7 +322,7 @@ void Board::reverseMove(Move move)
 
 		case MoveType::WhiteShort:
 		pieceBoards[Piece::King | Piece::White] ^= targetBoard | sourceBoard;
-		pieceBoards[Piece::Rook | Piece::White] ^= 0b10010000ull;
+		pieceBoards[Piece::Rook | Piece::White] ^= 0b10100000ull;
 
 		pieceBoards[Piece::White] ^= 0b11110000ull;
 
@@ -334,7 +334,7 @@ void Board::reverseMove(Move move)
 
 		case MoveType::WhiteLong:
 		pieceBoards[Piece::King | Piece::White] ^= targetBoard | sourceBoard;
-		pieceBoards[Piece::Rook | Piece::White] ^= 0b10001ull;
+		pieceBoards[Piece::Rook | Piece::White] ^= 0b1001ull;
 
 		pieceBoards[Piece::White] ^= 0b11101ull;
 
@@ -579,7 +579,6 @@ void Board::addKingMoves(std::vector<Move>& currentMoves) const
 	{
 		boardLoop(boardIntersect(KingMoves[i], ~pieceBoards[blacksTurn]), copyBoard2, j)
 		{
-			//need to check for danger
 			currentMoves.push_back(buildMoveFromContext(i, j, MoveType::Normal));
 		}
 	}
@@ -593,22 +592,22 @@ void Board::addKingMoves(std::vector<Move>& currentMoves) const
 		{
 			if (extraInfo & Extra::Black_Long)
 			{
-				buildMoveFromContext(7 * 8 + 4, 7 * 8 + 2, MoveType::BlackLong);
+				currentMoves.push_back(buildMoveFromContext(7 * 8 + 4, 7 * 8 + 2, MoveType::BlackLong));
 			}
 			if (extraInfo & Extra::Black_Short)
 			{
-				buildMoveFromContext(7 * 8 + 4, 7 * 8 + 6, MoveType::BlackShort);
+				currentMoves.push_back(buildMoveFromContext(7 * 8 + 4, 7 * 8 + 6, MoveType::BlackShort));
 			}
 		}
 		else
 		{
 			if (extraInfo & Extra::White_Long)
 			{
-				buildMoveFromContext(4, 2, MoveType::WhiteLong);
+				currentMoves.push_back(buildMoveFromContext(4, 2, MoveType::WhiteLong));
 			}
 			if (extraInfo & Extra::White_Short)
 			{
-				buildMoveFromContext(4, 6, MoveType::WhiteShort);
+				currentMoves.push_back(buildMoveFromContext(4, 6, MoveType::WhiteShort));
 			}
 		}
 	}
@@ -625,13 +624,13 @@ bool Board::miscLegalityCheck(Move move) const
 	switch (move.moveType)
 	{
 	case MoveType::BlackShort:
-	return !inCheck() && !positionAttacked(3 + 7 * 8, Piece::White);
-	case MoveType::BlackLong:
 	return !inCheck() && !positionAttacked(5 + 7 * 8, Piece::White);
+	case MoveType::BlackLong:
+	return !inCheck() && !positionAttacked(3 + 7 * 8, Piece::White);
 	case MoveType::WhiteShort:
-	return !inCheck() && !positionAttacked(3, Piece::Black);
-	case MoveType::WhiteLong:
 	return !inCheck() && !positionAttacked(5, Piece::Black);
+	case MoveType::WhiteLong:
+	return !inCheck() && !positionAttacked(3, Piece::Black);
 	
 	default:
 	return true;
