@@ -4,7 +4,7 @@
 <!--[![Forks][forks-shield]][forks-url]-->
 <!--[![Stargazers][stars-shield]][stars-url]-->
 <!--[![Issues][issues-shield]][issues-url]-->
-[![MIT License][license-shield]][license-url]
+[![License](https://img.shields.io/github/license/davidBronicki/Chess_Engine.svg)](./LICENSE)
 <!--[![LinkedIn][linkedin-shield]][linkedin-url]-->
 
 
