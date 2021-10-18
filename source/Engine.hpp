@@ -82,10 +82,10 @@ class Engine
 
 	static void calculationLoop(Engine* engine);
 
-	static std::tuple<Value, std::vector<Move>> quiescentSearch(Engine* engine,
-		Value alpha, Value beta);
+	static std::tuple<Value, std::vector<Move>> quiescenceSearch(Engine* engine,
+		Value alpha, Value beta, short searchDepth);
 
-	static std::tuple<Value, std::vector<Move>> nonQuiescentSearch(Engine* engine,
+	static std::tuple<Value, std::vector<Move>> nonQuiescenceSearch(Engine* engine,
 		Value alpha, Value beta, short searchDepth);
 
 	public:
@@ -103,6 +103,7 @@ class Engine
 	//custom parameters
 	short keepNStacks;//keep best N lines
 	short depthWalkValue;//initial search depth when deep searching
+	short quiescenceSearchDepth;
 	short cores;//number of calculation threads to use
 
 	//state variables
@@ -133,6 +134,7 @@ class Engine
 
 	bool threeMoveRepetition();
 	bool advance(Move move);
+	char nonQuiescentAdvance(Move move);
 	void back();
 
 	public:

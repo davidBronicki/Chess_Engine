@@ -10,7 +10,7 @@ BitBoard Board::KnightMoves[64];
 BitBoard Board::SlideMoves[8][64];
 BitBoard Board::KingMoves[64];
 
-// uc Board::RelativeDirection[64][64];
+uc Board::RelativeDirection[64][64];
 
 void Board::initializeGlobals()
 {
@@ -166,62 +166,62 @@ void Board::initializeGlobals()
 	}
 
 	//initialize move type lookup table
-	// for (int x1 = 0; x1 < 8; ++x1)
-	// {
-	// 	for (int y1 = 0; y1 < 8; ++y1)
-	// 	{
-	// 		for (int x2 = 0; x2 < 8; ++x2)
-	// 		{
-	// 			for (int y2 = 0; y2 < 8; ++y2)
-	// 			{
-	// 				int i = 8 * y1 + x1;
-	// 				int j = 8 * y2 + x2;
-	// 				if (i == j)
-	// 				{
-	// 					RelativeDirection[i][j] = Direction::None;
-	// 					continue;
-	// 				}
-	// 				int dx = x2 - x1;
-	// 				int dy = y2 - y1;
-	// 				if (dx == 0)
-	// 				{
-	// 					if (dy > 0)
-	// 						RelativeDirection[i][j] = Direction::Up;
-	// 					else
-	// 						RelativeDirection[i][j] = Direction::Down;
-	// 					continue;
-	// 				}
-	// 				if (dy == 0)
-	// 				{
-	// 					if (dx > 0)
-	// 						RelativeDirection[i][j] = Direction::Right;
-	// 					else
-	// 						RelativeDirection[i][j] = Direction::Left;
-	// 					continue;
-	// 				}
-	// 				RelativeDirection[i][j] = Direction::None;
-	// 				if (dx == dy)
-	// 				{
-	// 					if (dx > 0)
-	// 						RelativeDirection[i][j] = Direction::UpRight;
-	// 					else
-	// 						RelativeDirection[i][j] = Direction::DownLeft;
-	// 					continue;
-	// 				}
-	// 				if (dx == -dy)
-	// 				{
-	// 					if (dx > 0)
-	// 						RelativeDirection[i][j] = Direction::DownRight;
-	// 					else
-	// 						RelativeDirection[i][j] = Direction::UpLeft;
-	// 					continue;
-	// 				}
-	// 				if ((abs(dx) == 2 && abs(dy) == 1) || (abs(dx) == 1 && abs(dy) == 2))
-	// 					RelativeDirection[i][j] = Direction::Knight;
-	// 			}
-	// 		}
-	// 	}
-	// }
+	for (int x1 = 0; x1 < 8; ++x1)
+	{
+		for (int y1 = 0; y1 < 8; ++y1)
+		{
+			for (int x2 = 0; x2 < 8; ++x2)
+			{
+				for (int y2 = 0; y2 < 8; ++y2)
+				{
+					int i = 8 * y1 + x1;
+					int j = 8 * y2 + x2;
+					if (i == j)
+					{
+						RelativeDirection[i][j] = Direction::None;
+						continue;
+					}
+					int dx = x2 - x1;
+					int dy = y2 - y1;
+					if (dx == 0)
+					{
+						if (dy > 0)
+							RelativeDirection[i][j] = Direction::Up;
+						else
+							RelativeDirection[i][j] = Direction::Down;
+						continue;
+					}
+					if (dy == 0)
+					{
+						if (dx > 0)
+							RelativeDirection[i][j] = Direction::Right;
+						else
+							RelativeDirection[i][j] = Direction::Left;
+						continue;
+					}
+					RelativeDirection[i][j] = Direction::None;
+					if (dx == dy)
+					{
+						if (dx > 0)
+							RelativeDirection[i][j] = Direction::UpRight;
+						else
+							RelativeDirection[i][j] = Direction::DownLeft;
+						continue;
+					}
+					if (dx == -dy)
+					{
+						if (dx > 0)
+							RelativeDirection[i][j] = Direction::DownRight;
+						else
+							RelativeDirection[i][j] = Direction::UpLeft;
+						continue;
+					}
+					if ((abs(dx) == 2 && abs(dy) == 1) || (abs(dx) == 1 && abs(dy) == 2))
+						RelativeDirection[i][j] = Direction::Knight;
+				}
+			}
+		}
+	}
 }
 
 Board::Board()

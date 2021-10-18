@@ -31,7 +31,7 @@ struct Board
 
 	static BitBoard KingMoves[64];
 
-	// static uc RelativeDirection[64][64];
+	static uc RelativeDirection[64][64];
 
 	static void initializeGlobals();
 
@@ -75,6 +75,8 @@ struct Board
 	bool inCheck() const;
 	bool miscLegalityCheck(Move move) const;
 	bool positionAttacked(int pos, bool byBlack) const;
+
+	bool isQuiescent(Move move) const;
 
 	void addPawnMoves(std::vector<Move>& currentMoves) const;
 	void addKnightMoves(std::vector<Move>& currentMoves) const;

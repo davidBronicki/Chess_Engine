@@ -72,7 +72,12 @@ void Engine::run()
 			stopFlag = false;
 		}
 		if (quitFlag)
+		{
+			stopFlag = true;
+			if (calculationThread.joinable())
+				calculationThread.join();
 			return;
+		}
 		if (goFlag)
 		{
 			goFlag = false;

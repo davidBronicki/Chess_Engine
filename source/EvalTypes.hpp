@@ -5,11 +5,11 @@
 struct Value
 {
 	float value;
-	int movesToMate;
+	short movesToMate;
 
 	Value():value(0), movesToMate(0){}
 	Value(float value):value(value), movesToMate(0){}
-	Value(float value, int movesToMate):value(value), movesToMate(movesToMate){}
+	Value(float value, short movesToMate):value(value), movesToMate(movesToMate){}
 };
 
 inline bool operator==(Value a, Value b)
