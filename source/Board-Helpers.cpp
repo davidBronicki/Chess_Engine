@@ -26,12 +26,9 @@ bool Board::miscLegalityCheck(Move move) const
 }
 bool Board::positionAttacked(int pos, bool byBlack) const
 {
-	BitBoard attacks = boardIntersect(
-		Board::KnightMoves[pos],
-		pieceBoards[Piece::Knight | byBlack]);
-	if (attacks != 0ull) return true;
+	if (boardIntersect(KnightMoves[pos],
+		pieceBoards[Piece::Knight | byBlack]) != 0ull) return true;
 	
-
 	for (int i = 0; i < 8; ++i)
 	{
 		int hitIndex = i < 4 ?
@@ -63,17 +60,16 @@ bool Board::positionAttacked(int pos, bool byBlack) const
 
 	if (byBlack)
 	{
-		attacks = boardIntersect(indexToBitBoard(pos),
+		if (boardIntersect(indexToBitBoard(pos),
 			shiftDown(shiftRight(pawns, 1), 1) |
-			shiftDown(shiftLeft(pawns, 1), 1));
+			shiftDown(shiftLeft(pawns, 1), 1)) != 0ull) return true;
 	}
 	else
 	{
-		attacks = boardIntersect(indexToBitBoard(pos),
+		if (boardIntersect(indexToBitBoard(pos),
 			shiftUp(shiftRight(pawns, 1), 1) |
-			shiftUp(shiftLeft(pawns, 1), 1));
+			shiftUp(shiftLeft(pawns, 1), 1)) != 0ull) return true;
 	}
-	if (attacks != 0ull) return true;
 	if (boardIntersect(KingMoves[pos],
 		pieceBoards[Piece::King | byBlack]) != 0ull) return true;
 

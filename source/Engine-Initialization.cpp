@@ -18,10 +18,10 @@ Engine::Engine()
 	quitFlag(false),
 	stopFlag(false),
 	debugFlag(false),
-	hashTable(1 << 15),
+	hashTable(24),
 	board(make_shared<Board>()),
 	keepNStacks(1),
-	depthWalkValue(4),
+	depthWalkValue(1),
 	quiescenceSearchDepth(4)
 {
 }

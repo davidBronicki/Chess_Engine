@@ -22,13 +22,12 @@ struct HashBoard
 	Value eval;
 	Move bestResponse;
 
-	short totalPlyDepth;
-	int uses;
-	short lastUseSearch;
+	short searchDepth;
+	short rootPly;
 
 	enum CutType : uc
 	{
-		leaf,
+		TrueValue,
 		alphaCut,
 		betaCut
 	} cutType;
@@ -39,20 +38,22 @@ class HashTable
 	HashBoard* table;
 	size_t size;
 	size_t occupancy;
+	Hash mask;
 	public:
 	HashTable(size_t tableSize)
 	:
 		table{new HashBoard[tableSize]{}},
-		size(tableSize)
+		size(1ull << tableSize),
+		mask((1ull << tableSize) - 1)
 	{}
 	~HashTable(){delete[] table;}
 
 	HashTable(HashTable const&) = delete;
 	HashTable& operator=(HashTable const&) = delete;
 
-	HashBoard const& get(ull hash) const {return table[hash % size];}
+	HashBoard const& get(Hash hash) const {return table[hash & mask];}
 	void set(HashBoard board) {
-		HashBoard& slot = table[board.hash % size];
+		HashBoard& slot = table[board.hash & mask];
 		if (slot.hash == 0)
 			occupancy++;
 		slot = board;
@@ -78,15 +79,31 @@ class HashTable
 
 class Engine
 {
+	enum QuiescentType : uc
+	{
+		Illegal = 0,
+		Quiescent = 1,
+		NonQuiescent = 2
+	};
+
+	enum HashOccupancyType : uc
+	{
+		HashNotPresent = 0,
+		HashesNotEqual = 1,
+		HashesEqual = 2
+	};
+
 	static bool globalsReady;
 
 	static void calculationLoop(Engine* engine);
 
-	static std::tuple<Value, std::vector<Move>> quiescenceSearch(Engine* engine,
-		Value alpha, Value beta, short searchDepth);
+	static Value quiescenceSearch(Engine& engine,
+		Value alpha, Value beta, short searchDepth, short rootPly);
 
-	static std::tuple<Value, std::vector<Move>> nonQuiescenceSearch(Engine* engine,
-		Value alpha, Value beta, short searchDepth);
+	static Value nonQuiescenceSearch(Engine& engine,
+		Value alpha, Value beta, short searchDepth, short rootPly);
+
+	static std::vector<std::tuple<Value, Move>> rootSearch(Engine& engine, short searchDepth);
 
 	public:
 	static void initializeGlobals();
@@ -134,7 +151,7 @@ class Engine
 
 	bool threeMoveRepetition();
 	bool advance(Move move);
-	char nonQuiescentAdvance(Move move);
+	QuiescentType nonQuiescentAdvance(Move move);
 	void back();
 
 	public:

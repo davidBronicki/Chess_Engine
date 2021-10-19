@@ -32,14 +32,7 @@ Value staleEval(Board const& board)//no moves possible, draw or death
 {
 	if (board.inCheck())
 	{
-		if (board.blacksTurn)
-		{
-			return Value(HUGE_VALF, board.plyNumber);
-		}
-		else
-		{
-			return Value(-HUGE_VALF, board.plyNumber);
-		}
+		return Value(-HUGE_VALF, board.plyNumber);
 	}
 	return Value();
 }
@@ -58,218 +51,322 @@ Value evaluate(Board const& board)
 	value.value -= 3 * cardinality(board.pieceBoards[Piece::Bishop | Piece::Black]);
 	value.value -= 5 * cardinality(board.pieceBoards[Piece::Rook | Piece::Black]);
 	value.value -= 9 * cardinality(board.pieceBoards[Piece::Queen | Piece::Black]);
-	return value;
+	return board.blacksTurn ? -value : value;
 }
 
-tuple<Value, vector<Move>> Engine::quiescenceSearch(Engine* engine,
-	Value alpha, Value beta, short searchDepth)
+Value Engine::quiescenceSearch(Engine& engine,
+	Value alpha, Value beta, short searchDepth, short rootPly)
 {
-	if (!engine->good())
+	if (!engine.good())
 	{
-		return {Value(), {}};
+		return Value();
 	}
 
-	Board& board(*engine->board);
-
+	Board& board(*engine.board);
 	if (searchDepth == 0)
-		return {evaluate(board), {}};
-	//TODO: actual quiescent search
+	{
+		return evaluate(board);
+	}
 
 	if (board.plySinceLastPawnOrCapture >= 100 ||
-		engine->threeMoveRepetition())
+		engine.threeMoveRepetition())
 	{
 		//TODO: check for off-by-one issue
-		return {Value(), {}};
+		return Value();
 	}
-
-	bool legalMoveExists = false;
-	bool nonQuiescentMoveExists = false;
 
 	vector<Move> moves(board.generateMoves());
 
-	Value bestValue{board.blacksTurn ? HUGE_VALF : -HUGE_VALF, board.plyNumber};
-	vector<Move> bestMoveStack;
+	//TODO: use hash table
+
+	// HashBoard const& hBoard = engine->hashTable.get(board.hash);
+	// HashOccupancyType hashExistence;
+
+	// if (hBoard.hash == 0)
+	// {
+	// 	hashExistence = HashNotPresent;
+	// }
+	// else if (hBoard.hash == board.hash)
+	// {
+	// 	hashExistence = HashesEqual;
+	// 	if (hBoard.searchDepth >= searchDepth)
+	// 	{
+	// 		return {hBoard.eval, {hBoard.bestResponse}};
+	// 	}
+	// 	for (int i = 0; i < moves.size(); ++i)
+	// 	{
+	// 		if (moves[i] == hBoard.bestResponse)
+	// 		{
+	// 			swap(moves[0], moves[i]);
+	// 			break;
+	// 		}
+	// 	}
+	// }
+	// else
+	// {
+	// 	hashExistence = HashesNotEqual;
+	// }
+
+	bool legalMoveExists = false;
+	bool nonQuiescentMoveExists = false;
+	Value new_alpha{alpha};
 	for (auto&& move : moves)
 	{
-		char temp = engine->nonQuiescentAdvance(move);
-		legalMoveExists = legalMoveExists || temp != 0;
-		if (temp != 2)
+		char temp = engine.nonQuiescentAdvance(move);
+		legalMoveExists = legalMoveExists || temp != Illegal;
+		if (temp != NonQuiescent)
 			continue;
 
 		nonQuiescentMoveExists = true;
 
-		//TODO: alpha beta pruning
+		new_alpha = max(quiescenceSearch(
+			engine, -beta, -new_alpha, searchDepth - 1, rootPly), new_alpha);
+		if (new_alpha >= beta)
+		{
+			//hard fail-high beta cutoff, beta is a lower bound. (value is "too good")
+			//TODO: hash update
+			engine.back();
+			return -beta;
+		}
+		engine.back();
 
-		auto tempPair = quiescenceSearch(
-			engine, alpha, beta, searchDepth - 1);
-
-		if (!board.blacksTurn)//move has been performed, so turn is flipped
-		{
-			if (get<0>(tempPair) < bestValue)
-			{
-				bestValue = get<0>(tempPair);
-				bestMoveStack = get<1>(tempPair);
-				bestMoveStack.push_back(move);
-			}
-			beta = min(beta, bestValue);
-		}
-		else
-		{
-			if (get<0>(tempPair) > bestValue)
-			{
-				bestValue = get<0>(tempPair);
-				bestMoveStack = get<1>(tempPair);
-				bestMoveStack.push_back(move);
-			}
-			alpha = max(alpha, bestValue);
-		}
-		engine->back();
-		if (alpha >= beta)
-		{
-			return make_tuple(bestValue, bestMoveStack);
-		}
 	}
 
 	if (!legalMoveExists)//game has reached an end state
 	{
-		return {staleEval(board), {}};
+		return -staleEval(board);
 	}
-	if (nonQuiescentMoveExists)//game has reached a quiescent position
+	if (!nonQuiescentMoveExists)//game has reached a quiescent position
 	{
-		return {evaluate(board), {}};
+		return -evaluate(board);
 	}
 
-	return make_tuple(bestValue, bestMoveStack);
+	//TODO: update hash
+
+	// if (hashExistence != HashesNotEqual || hBoard.rootPly + 1 < rootPly)
+	// {
+	// 	engine->hashTable.set({board.hash, bestValue, bestMoveStack.back(), static_cast<short>(board.plyNumber + searchDepth)});
+	// }
+
+	return -new_alpha;
 }
 
-tuple<Value, vector<Move>> Engine::nonQuiescenceSearch(Engine* engine,
-	Value alpha, Value beta, short searchDepth)
+Value Engine::nonQuiescenceSearch(Engine& engine,
+	Value alpha, Value beta, short searchDepth, short rootPly)
 {
+	//negamax search algorithm
+
 	if (searchDepth == 0)
-		return quiescenceSearch(engine, alpha, beta, engine->quiescenceSearchDepth);
-	if (!engine->good())
 	{
-		return {Value(), {}};
+		short initialSearchDepth = engine.quiescenceSearchDepth % engine.depthWalkValue;
+		initialSearchDepth = initialSearchDepth == 0 ?
+			engine.depthWalkValue :
+			initialSearchDepth;
+		
+		for (short currentSearchDepth = initialSearchDepth;
+			currentSearchDepth <= engine.quiescenceSearchDepth;
+			currentSearchDepth += engine.depthWalkValue)
+		{
+			auto value = Engine::quiescenceSearch(engine,
+				-beta, -alpha, currentSearchDepth, rootPly);
+			if (currentSearchDepth == engine.quiescenceSearchDepth)
+				return -value;
+		}
+	}
+	if (!engine.good())
+	{
+		return Value();
 	}
 
-	Board& board(*engine->board);
+	Board& board(*engine.board);
 
 	if (board.plySinceLastPawnOrCapture >= 100 ||
-		engine->threeMoveRepetition())
+		engine.threeMoveRepetition())
 	{
 		//TODO: check for off-by-one issue
-		return {Value(), {}};
+		return Value();
 	}
 
 	vector<Move> moves(board.generateMoves());
 
-	Value bestValue{board.blacksTurn ? HUGE_VALF : -HUGE_VALF, board.plyNumber};
-	vector<Move> bestMoveStack;
+	//TODO: use hash table
+
+	// HashBoard const& hBoard = engine.hashTable.get(board.hash);
+	// HashOccupancyType hashExistence;
+
+	// if (hBoard.hash == 0)
+	// {
+	// 	hashExistence = HashNotPresent;
+	// }
+	// else if (hBoard.hash == board.hash)
+	// {
+	// 	hashExistence = HashesEqual;
+	// 	if (hBoard.searchDepth >= searchDepth)
+	// 	{
+	// 		return -hBoard.eval;
+	// 	}
+	// 	for (int i = 0; i < moves.size(); ++i)
+	// 	{
+	// 		if (moves[i] == hBoard.bestResponse)
+	// 		{
+	// 			swap(moves[0], moves[i]);
+	// 			break;
+	// 		}
+	// 	}
+	// }
+	// else
+	// {
+	// 	hashExistence = HashesNotEqual;
+	// }
+
+	//fail-hard algorithm
+
+	Value new_alpha{alpha};
 
 	bool legalMoveExists = false;
 	for (auto&& move : moves)
 	{
-		if (!engine->advance(move))
+		if (!engine.advance(move))
 			continue;
 
 		legalMoveExists = true;
 
-		//TODO: alpha beta pruning
-
-		auto tempPair = nonQuiescenceSearch(
-			engine, alpha, beta, searchDepth - 1);
-
-		if (!board.blacksTurn)//move has been performed, so turn is flipped
+		new_alpha = max(nonQuiescenceSearch(
+			engine, -beta, -new_alpha, searchDepth - 1, rootPly), new_alpha);
+		if (new_alpha >= beta)
 		{
-			if (get<0>(tempPair) < bestValue)
-			{
-				bestValue = get<0>(tempPair);
-				bestMoveStack = get<1>(tempPair);
-				bestMoveStack.push_back(move);
-			}
-			beta = min(beta, bestValue);
+			//hard fail-high beta cutoff, beta is a lower bound. (value is "too good")
+			//TODO: hash update
+			engine.back();
+			return -beta;
 		}
-		else
-		{
-			if (get<0>(tempPair) > bestValue)
-			{
-				bestValue = get<0>(tempPair);
-				bestMoveStack = get<1>(tempPair);
-				bestMoveStack.push_back(move);
-			}
-			alpha = max(alpha, bestValue);
-		}
-		engine->back();
-		if (alpha >= beta)
-		{
-			return make_tuple(bestValue, bestMoveStack);
-		}
-
-
-		//TODO: actual hash board logic
-
-		//not guaranteed that the return move list will not be empty here...
-
-		// if (searchDepth > 1 && engine->hashTable.get(board.hash).hash == 0)
-		// 	engine->hashTable.set({board.hash,
-		// 		get<0>(valueStackPairs.back()),
-		// 		get<1>(valueStackPairs.back()).back(),
-		// 		board.plyNumber, 0, engine->searchIter, HashBoard::leaf});
+		engine.back();
 	}
 
 	if (!legalMoveExists)//game has reached an end condition
 	{
-		return {staleEval(board), {}};
+		return -staleEval(board);
 	}
 
-	return make_tuple(bestValue, bestMoveStack);
+	//TODO: update hash
+
+	// if (hashExistence != HashesNotEqual || hBoard.rootPly + 1 < rootPly)
+	// {
+	// 	engine->hashTable.set({board.hash, bestValue, bestMoveStack.back(), static_cast<short>(board.plyNumber + searchDepth)});
+	// }
+
+	return -new_alpha;
+}
+
+vector<tuple<Value, Move>> Engine::rootSearch(Engine& engine, short searchDepth)
+{
+	Board& board(*engine.board);
+	short rootPly = board.plyNumber;
+
+	Value alpha{-HUGE_VALF, rootPly};
+	Value beta{HUGE_VALF, rootPly};
+
+	vector<Move> moves(board.generateMoves());
+
+	vector<Value> values;
+	vector<short> indices;
+
+	for (short i = 0; i < moves.size(); ++i)
+	{
+		if (!engine.advance(moves[i]))
+		{
+			values.emplace_back();//won't be used
+			continue;
+		}
+
+		auto value = nonQuiescenceSearch(
+			engine, -beta, -alpha, searchDepth - 1, rootPly);
+		alpha = max(alpha, value);
+		values.push_back(value);
+		indices.push_back(i);//keeps track of legal moves and implicitly pairs with value
+		engine.back();
+	}
+
+	//sort into decending order, best moves first
+	sort(indices.begin(), indices.end(), [values](short a, short b)
+	{
+		return values[a] > values[b];
+	});
+
+	//TODO: update hash
+
+	// if (hashExistence != HashesNotEqual || hBoard.rootPly + 1 < rootPly)
+	// {
+	// 	engine->hashTable.set({board.hash, bestValue, bestMoveStack.back(), static_cast<short>(board.plyNumber + searchDepth)});
+	// }
+
+	vector<tuple<Value, Move>> output;
+
+	for (auto&& index : indices)
+	{
+		output.emplace_back(values[index], moves[index]);
+	}
+
+	return output;
 }
 
 void Engine::calculationLoop(Engine* engine)
 {
 	engine->bestMoveStacks.resize(0);
 
-	Value alpha(Value{-HUGE_VALF, engine->board->plyNumber});
-	Value beta(Value{HUGE_VALF, engine->board->plyNumber});
-	Value value;
 	short searchDepth = engine->infiniteFlag || engine->maxDepth == 0 ?
-		INT16_MAX :
+		// INT16_MAX :
+		4 :
 		engine->maxDepth;
-	short currentSearchDepth = min(engine->depthWalkValue, searchDepth);
-	//TODO: iterate through search depths
-	auto info = Engine::nonQuiescenceSearch(engine,
-		alpha, beta, currentSearchDepth);
+
+	short initialSearchDepth = searchDepth % engine->depthWalkValue;
+	initialSearchDepth = initialSearchDepth == 0 ?
+		engine->depthWalkValue :
+		initialSearchDepth;
 	
-	engine->bestMoveStacks.push_back(get<1>(info));
+	for (short currentSearchDepth = initialSearchDepth;
+		currentSearchDepth <= searchDepth;
+		currentSearchDepth += engine->depthWalkValue)
+	{
+		auto info = Engine::rootSearch(*engine, currentSearchDepth);
+		if (engine->bestMoveStacks.size() != 0 &&
+			engine->stopFlag) break;
+		engine->bestMoveStacks.resize(0);
+		engine->bestMoveStacks.push_back({get<1>(info[0])});
+
+		cout << "hash occupancy: " << engine->hashTable.getOccupancy() << " / " << engine->hashTable.getSize() << endl;
+
+		if (engine->stopFlag) break;
+	}
 
 	engine->stopFlag = true;
 	
 	if (engine->bestMoveStacks[0].size() > 0)
-		cout << "bestmove " << moveToAlgebraic(engine->bestMoveStacks[0].back()) << endl;
+		cout << "bestmove " << moveToAlgebraic(engine->bestMoveStacks[0][0]) << endl;
 	else
 		cout << "bestmove " << "0000" << endl;
 }
 
-char Engine::nonQuiescentAdvance(Move move)
+Engine::QuiescentType Engine::nonQuiescentAdvance(Move move)
 {
 	bool quiescent = board->isQuiescent(move);
 	if (!board->miscLegalityCheck(move))
-		return 0;
+		return Illegal;
 	board->performMove(move);
 	if (board->positionAttacked(firstIndex(
 		board->pieceBoards[Piece::King | !board->blacksTurn]), board->blacksTurn))
 	{
 		board->reverseMove(move);
-		return 0;
+		return Illegal;
 	}
 	if (quiescent)
 	{
 		board->reverseMove(move);
-		return 1;
+		return Quiescent;
 	}
 	activeMoves.push_back(move);
 	activeHashes.push_back(board->hash);
-	return 2;
+	return NonQuiescent;
 }
 bool Engine::advance(Move move)
 {

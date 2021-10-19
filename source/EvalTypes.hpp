@@ -17,6 +17,11 @@ inline bool operator==(Value a, Value b)
 	return a.value == b.value && a.matePlyNumber == b.matePlyNumber;
 }
 
+inline Value operator-(Value a)
+{
+	return {-a.value, a.matePlyNumber};
+}
+
 inline bool operator>(Value a, Value b)
 {
 	return a.value > b.value

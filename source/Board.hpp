@@ -15,6 +15,11 @@ struct Move
 	uc deltaPawnOrCapturePly;
 };
 
+inline bool operator==(Move a, Move b)
+{
+	return (*(ull*)(void*)(&a) >>  8) == (*(ull*)(void*)(&b) >> 8);
+}
+
 typedef ull Hash;
 
 extern Move nonMove;
