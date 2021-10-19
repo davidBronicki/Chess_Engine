@@ -8,26 +8,6 @@
 
 using namespace std;
 
-inline void sortPositions(Board const& board, vector<tuple<Value, vector<Move>>> const& positions, vector<short>& indices)
-{
-	if (board.blacksTurn)//ascending order so lowest score is first (best for black)
-	{
-		sort(indices.begin(), indices.end(),
-			[&positions](short a, short b)
-			{
-				return get<0>(positions[a]) < get<0>(positions[b]);
-			});
-	}
-	else//descending order so highest score is first (best for white)
-	{
-		sort(indices.begin(), indices.end(),
-			[&positions](short a, short b)
-			{
-				return get<0>(positions[a]) > get<0>(positions[b]);
-			});
-	}
-}
-
 Value staleEval(Board const& board)//no moves possible, draw or death
 {
 	if (board.inCheck())
@@ -189,35 +169,55 @@ Value Engine::nonQuiescenceSearch(Engine& engine,
 
 	vector<Move> moves(board.generateMoves());
 
-	//TODO: use hash table
 
-	// HashBoard const& hBoard = engine.hashTable.get(board.hash);
-	// HashOccupancyType hashExistence;
+	HashBoard const& hBoard = engine.hashTable.get(board.hash);
+	HashOccupancyType hashExistence;
 
-	// if (hBoard.hash == 0)
-	// {
-	// 	hashExistence = HashNotPresent;
-	// }
-	// else if (hBoard.hash == board.hash)
-	// {
-	// 	hashExistence = HashesEqual;
-	// 	if (hBoard.searchDepth >= searchDepth)
-	// 	{
-	// 		return -hBoard.eval;
-	// 	}
-	// 	for (int i = 0; i < moves.size(); ++i)
-	// 	{
-	// 		if (moves[i] == hBoard.bestResponse)
-	// 		{
-	// 			swap(moves[0], moves[i]);
-	// 			break;
-	// 		}
-	// 	}
-	// }
-	// else
-	// {
-	// 	hashExistence = HashesNotEqual;
-	// }
+	if (hBoard.hash == 0)
+	{
+		hashExistence = HashNotPresent;
+	}
+	else if (hBoard.hash == board.hash)
+	{
+		hashExistence = HashesEqual;
+		//if searched to equal or better depth
+		//then we can trust the result
+		if (hBoard.searchDepth >= searchDepth)
+		{
+			switch (hBoard.nodeType)
+			{
+				case HashBoard::PrincipleVariation://exact value
+				return -hBoard.value;
+
+				case HashBoard::AllNode://upper bound value
+				if (hBoard.value <= alpha) return alpha;
+				else beta = hBoard.value;//try setting depth to hBoard depth
+				break;
+
+				case HashBoard::CutNode://lower bound value
+				if (hBoard.value >= beta) return beta;
+				else alpha = hBoard.value;//try setting depth to hBoard depth
+				break;
+			}
+		}
+
+		//if we have an all-node then there is no ordering knowledge to be gained
+		if (hBoard.nodeType != HashBoard::AllNode)
+		for (int i = 0; i < moves.size(); ++i)
+		{
+			if (moves[i] == hBoard.bestResponse)
+			{
+				swap(moves[0], moves[i]);
+				break;
+			}
+		}
+	}
+	else
+	{
+		hashExistence = HashesNotEqual;
+	}
+
+	//TODO: perform heuristic ordering
 
 	//fail-hard algorithm
 
@@ -238,6 +238,8 @@ Value Engine::nonQuiescenceSearch(Engine& engine,
 			//hard fail-high beta cutoff, beta is a lower bound. (value is "too good")
 			//TODO: hash update
 			engine.back();
+			//This is a cut-node
+
 			return -beta;
 		}
 		engine.back();
@@ -246,6 +248,19 @@ Value Engine::nonQuiescenceSearch(Engine& engine,
 	if (!legalMoveExists)//game has reached an end condition
 	{
 		return -staleEval(board);
+	}
+
+	if (new_alpha == alpha)
+	{
+		//hard fail-low alpha cutoff, alpha is an upper bound. (value is "too bad")
+
+		//This is an all-node
+	}
+	else
+	{
+		//exact value
+		
+		//This is a principle variation
 	}
 
 	//TODO: update hash

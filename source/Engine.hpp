@@ -19,7 +19,7 @@ std::string moveToAlgebraic(Move move);
 struct HashBoard
 {
 	ull hash;
-	Value eval;
+	Value value;
 	Move bestResponse;
 
 	short searchDepth;
@@ -27,10 +27,10 @@ struct HashBoard
 
 	enum CutType : uc
 	{
-		TrueValue,
-		alphaCut,
-		betaCut
-	} cutType;
+		PrincipleVariation,
+		AllNode,
+		CutNode
+	} nodeType;
 };
 
 class HashTable
