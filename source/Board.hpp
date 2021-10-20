@@ -4,51 +4,31 @@
 
 #include "BitBoard.hpp"
 
-struct Move
-{
-	uc moveType;
-	uc sourceSquare;
-	uc targetSquare;
-	uc deltaSource;
-	uc deltaTarget;
-	uc deltaExtraInfo;
-	uc deltaPawnOrCapturePly;
-};
-
-inline bool operator==(Move a, Move b)
-{
-	return (*(ull*)(void*)(&a) >>  8) == (*(ull*)(void*)(&b) >> 8);
-}
-
-typedef ull Hash;
-
-extern Move nonMove;
-
 struct Board
 {
-	static Hash SquareHashes[64][16];
+	static HashType SquareHashes[64][16];
 
-	static Hash ExtraHashes[256];
-	static Hash TurnHash;
+	static HashType ExtraHashes[256];
+	static HashType TurnHash;
 
 	static BitBoard KnightMoves[64];
 	static BitBoard SlideMoves[8][64];
 
 	static BitBoard KingMoves[64];
 
-	static uc RelativeDirection[64][64];
+	static Move::Direction RelativeDirection[64][64];
 
 	static void initializeGlobals();
 
 	bool blacksTurn;
-	uc extraInfo;
-	uc plySinceLastPawnOrCapture;
-	short plyNumber;
+	ExtraType extraInfo;
+	PlyType plySinceLastPawnOrCapture;
+	PlyType plyNumber;
 
 	// std::vector<Move> moveStack;
 
 	BitBoard pieceBoards[16];
-	uc fullBoard[64];
+	PieceType fullBoard[64];
 
 	// bool inCheck;
 
@@ -63,7 +43,7 @@ struct Board
 	// BitBoard rookPinnedPieces[2][4];//each side and each direction
 	// BitBoard pinnedPieces[2];//each side, union of all previous
 
-	ull hash;
+	HashType hash;
 
 
 	Board();
@@ -72,7 +52,7 @@ struct Board
 	void resetCongregateData();
 	void initPieceBoards();
 
-	Move buildMoveFromContext(uc sourceSquare, uc targetSquare, uc moveType) const;
+	Move buildMoveFromContext(uc sourceSquare, uc targetSquare, Move::Type moveType) const;
 
 	std::vector<Move> generateMoves() const;
 

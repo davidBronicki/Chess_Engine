@@ -11,13 +11,13 @@ bool Board::miscLegalityCheck(Move move) const
 {
 	switch (move.moveType)
 	{
-	case MoveType::BlackShort:
+	case Move::BlackShort:
 	return !inCheck() && !positionAttacked(5 + 7 * 8, Piece::White);
-	case MoveType::BlackLong:
+	case Move::BlackLong:
 	return !inCheck() && !positionAttacked(3 + 7 * 8, Piece::White);
-	case MoveType::WhiteShort:
+	case Move::WhiteShort:
 	return !inCheck() && !positionAttacked(5, Piece::Black);
-	case MoveType::WhiteLong:
+	case Move::WhiteLong:
 	return !inCheck() && !positionAttacked(3, Piece::Black);
 	
 	default:

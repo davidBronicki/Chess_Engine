@@ -23,7 +23,7 @@
 		BitBoard availableMovesBoard = moveScan ^ moveScanFromHit ^ selfCaptureBoard;\
 		boardLoop(availableMovesBoard, copyBoard2, j)\
 		{\
-			currentMoves.push_back(buildMoveFromContext(i, j, MoveType::Normal));\
+			currentMoves.push_back(buildMoveFromContext(i, j, Move::Normal));\
 		}\
 	}
 
@@ -36,7 +36,7 @@
 		BitBoard availableMovesBoard = moveScan ^ moveScanFromHit ^ selfCaptureBoard;\
 		boardLoop(availableMovesBoard, copyBoard2, j)\
 		{\
-			currentMoves.push_back(buildMoveFromContext(i, j, MoveType::Normal));\
+			currentMoves.push_back(buildMoveFromContext(i, j, Move::Normal));\
 		}\
 	}
 
@@ -44,11 +44,11 @@
 
 #define slideHitsBackward(slideBoards, index) (slideBoards[index] ^ slideBoards[lastIndex(boardIntersect(slideBoards[index], pieceBoards[Piece::IndexAll]))])
 
-Move nonMove{MoveType::NullMove, 0, 0, 0, 0, 0, 0};
+Move nonMove{Move::NullMove, 0, 0, 0, 0, 0, 0};
 
-inline uc rookChecks(uc sourceSquare, uc targetSquare)
+inline ExtraType rookChecks(BoardSquare sourceSquare, BoardSquare targetSquare)
 {
-	uc output = 0;
+	ExtraType output = 0;
 	if (sourceSquare == 0 || targetSquare == 0)
 	{
 		output |= Extra::White_Long;
@@ -68,14 +68,14 @@ inline uc rookChecks(uc sourceSquare, uc targetSquare)
 	return output;
 }
 
-Move Board::buildMoveFromContext(uc sourceSquare, uc targetSquare, uc moveType) const
+Move Board::buildMoveFromContext(BoardSquare sourceSquare, BoardSquare targetSquare, Move::Type moveType) const
 {
 	uc nextIrreversiblePly = plySinceLastPawnOrCapture + 1;
 	uc deltaExtraInfo = extraInfo & Extra::EnPassantInfo;
 
 	switch (moveType)
 	{
-		case MoveType::Normal:
+		case Move::Normal:
 		if ((fullBoard[sourceSquare] & Piece::Occupied) == Piece::Pawn)
 		{
 			nextIrreversiblePly = 0;
@@ -91,50 +91,52 @@ Move Board::buildMoveFromContext(uc sourceSquare, uc targetSquare, uc moveType) 
 		deltaExtraInfo |= extraInfo & rookChecks(sourceSquare, targetSquare);
 		return standardMove;
 
-		case MoveType::EnPassant:
+		case Move::EnPassant:
 		nextIrreversiblePly = 0;
 		return {moveType, sourceSquare, targetSquare,
 			fullBoard[sourceSquare], fullBoard[targetSquare + (blacksTurn ? 8 : -8)],
 			deltaExtraInfo, static_cast<uc>(nextIrreversiblePly ^ plySinceLastPawnOrCapture)};
 
-		case MoveType::PromoQueen:
+		case Move::PromoQueen:
 		nextIrreversiblePly = 0;
 		deltaExtraInfo |= extraInfo & rookChecks(sourceSquare, targetSquare);
 		return promoMove(Piece::Queen | blacksTurn);
 
-		case MoveType::PromoRook:
+		case Move::PromoRook:
 		nextIrreversiblePly = 0;
 		deltaExtraInfo |= extraInfo & rookChecks(sourceSquare, targetSquare);
 		return promoMove(Piece::Rook | blacksTurn);
 
-		case MoveType::PromoBishop:
+		case Move::PromoBishop:
 		nextIrreversiblePly = 0;
 		deltaExtraInfo |= extraInfo & rookChecks(sourceSquare, targetSquare);
 		return promoMove(Piece::Bishop | blacksTurn);
 
-		case MoveType::PromoKnight:
+		case Move::PromoKnight:
 		nextIrreversiblePly = 0;
 		deltaExtraInfo |= extraInfo & rookChecks(sourceSquare, targetSquare);
 		return promoMove(Piece::Knight | blacksTurn);
 
-		case MoveType::WhiteShort:
+		case Move::WhiteShort:
 		deltaExtraInfo |= extraInfo & (Extra::White_Short | Extra::White_Long);
 		return standardMove;
 
-		case MoveType::BlackShort:
+		case Move::BlackShort:
 		deltaExtraInfo |= extraInfo & (Extra::Black_Short | Extra::Black_Long);
 		return standardMove;
 
-		case MoveType::WhiteLong:
+		case Move::WhiteLong:
 		deltaExtraInfo |= extraInfo & (Extra::White_Short | Extra::White_Long);
 		return standardMove;
 
-		case MoveType::BlackLong:
+		case Move::BlackLong:
 		deltaExtraInfo |= extraInfo & (Extra::Black_Short | Extra::Black_Long);
 		return standardMove;
+
+		default:
+		return {Move::NullMove, 0, 0, 0, 0, deltaExtraInfo,
+			static_cast<uc>(nextIrreversiblePly ^ plySinceLastPawnOrCapture)};
 	}
-	return {MoveType::NullMove, 0, 0, 0, 0, deltaExtraInfo,
-		static_cast<uc>(nextIrreversiblePly ^ plySinceLastPawnOrCapture)};
 }
 
 void Board::performMove(Move move)
@@ -147,7 +149,7 @@ void Board::performMove(Move move)
 	BitBoard targetBoard = indexToBitBoard(move.targetSquare);
 	switch (move.moveType)
 	{
-		case MoveType::NullMove:
+		case Move::NullMove:
 		if (move.deltaPawnOrCapturePly == 0)//non-move, no state change
 		{
 			hash ^= Board::ExtraHashes[extraInfo]
@@ -157,7 +159,7 @@ void Board::performMove(Move move)
 			return;
 		}
 		break;//null move, need to advance ply and modify extraInfo
-		case MoveType::EnPassant:
+		case Move::EnPassant:
 		{
 			uc enPassantSquare = (0b111000 & move.sourceSquare)
 				| (0b000111 & move.targetSquare);
@@ -173,7 +175,7 @@ void Board::performMove(Move move)
 		}
 		break;
 
-		case MoveType::BlackShort:
+		case Move::BlackShort:
 		pieceBoards[Piece::King | Piece::Black] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::Black] ^= 0b10100000ull << (7 * 8);
 
@@ -185,7 +187,7 @@ void Board::performMove(Move move)
 		fullBoard[63] ^= Piece::Rook | Piece::Black;
 		break;
 
-		case MoveType::BlackLong:
+		case Move::BlackLong:
 		pieceBoards[Piece::King | Piece::Black] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::Black] ^= 0b1001ull << (7 * 8);
 
@@ -197,7 +199,7 @@ void Board::performMove(Move move)
 		fullBoard[7 * 8] ^= Piece::Rook | Piece::Black;
 		break;
 
-		case MoveType::WhiteShort:
+		case Move::WhiteShort:
 		pieceBoards[Piece::King | Piece::White] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::White] ^= 0b10100000ull;
 
@@ -209,7 +211,7 @@ void Board::performMove(Move move)
 		fullBoard[7] ^= Piece::Rook | Piece::White;
 		break;
 
-		case MoveType::WhiteLong:
+		case Move::WhiteLong:
 		pieceBoards[Piece::King | Piece::White] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::White] ^= 0b1001ull;
 
@@ -268,7 +270,7 @@ void Board::reverseMove(Move move)
 	--plyNumber;
 	switch (move.moveType)
 	{
-		case MoveType::NullMove:
+		case Move::NullMove:
 		if (move.deltaPawnOrCapturePly == 0)//non-move, no state change
 		{
 			hash ^= Board::ExtraHashes[extraInfo]
@@ -280,7 +282,7 @@ void Board::reverseMove(Move move)
 			return;
 		}
 		break;//null move, need to advance ply and modify extraInfo
-		case MoveType::EnPassant:
+		case Move::EnPassant:
 		{
 			uc enPassantSquare = (0b111000 & move.sourceSquare)
 				| (0b000111 & move.targetSquare);
@@ -296,7 +298,7 @@ void Board::reverseMove(Move move)
 		}
 		break;
 
-		case MoveType::BlackShort:
+		case Move::BlackShort:
 		pieceBoards[Piece::King | Piece::Black] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::Black] ^= 0b10100000ull << (7 * 8);
 
@@ -308,7 +310,7 @@ void Board::reverseMove(Move move)
 		fullBoard[63] ^= Piece::Rook | Piece::Black;
 		break;
 
-		case MoveType::BlackLong:
+		case Move::BlackLong:
 		pieceBoards[Piece::King | Piece::Black] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::Black] ^= 0b1001ull << (7 * 8);
 
@@ -320,7 +322,7 @@ void Board::reverseMove(Move move)
 		fullBoard[7 * 8] ^= Piece::Rook | Piece::Black;
 		break;
 
-		case MoveType::WhiteShort:
+		case Move::WhiteShort:
 		pieceBoards[Piece::King | Piece::White] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::White] ^= 0b10100000ull;
 
@@ -332,7 +334,7 @@ void Board::reverseMove(Move move)
 		fullBoard[7] ^= Piece::Rook | Piece::White;
 		break;
 
-		case MoveType::WhiteLong:
+		case Move::WhiteLong:
 		pieceBoards[Piece::King | Piece::White] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::White] ^= 0b1001ull;
 
@@ -401,41 +403,41 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 			
 			if (rank == 6 && fullBoard[i - 16] == 0)
 			{
-				currentMoves.push_back(buildMoveFromContext(i, i - 16, MoveType::Normal));
+				currentMoves.push_back(buildMoveFromContext(i, i - 16, Move::Normal));
 			}
 			if (rank == 1)
 			{
-				currentMoves.push_back(buildMoveFromContext(i, i - 8, MoveType::PromoQueen));
-				currentMoves.push_back(buildMoveFromContext(i, i - 8, MoveType::PromoRook));
-				currentMoves.push_back(buildMoveFromContext(i, i - 8, MoveType::PromoBishop));
-				currentMoves.push_back(buildMoveFromContext(i, i - 8, MoveType::PromoKnight));
+				currentMoves.push_back(buildMoveFromContext(i, i - 8, Move::PromoQueen));
+				currentMoves.push_back(buildMoveFromContext(i, i - 8, Move::PromoRook));
+				currentMoves.push_back(buildMoveFromContext(i, i - 8, Move::PromoBishop));
+				currentMoves.push_back(buildMoveFromContext(i, i - 8, Move::PromoKnight));
 				continue;
 			}
-			currentMoves.push_back(buildMoveFromContext(i, i - 8, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, i - 8, Move::Normal));
 		}
 		boardLoop(rightCaptureReady, copyBoard, i)
 		{
 			if (i / 8 == 1)
 			{
-				currentMoves.push_back(buildMoveFromContext(i, i - 7, MoveType::PromoQueen));
-				currentMoves.push_back(buildMoveFromContext(i, i - 7, MoveType::PromoRook));
-				currentMoves.push_back(buildMoveFromContext(i, i - 7, MoveType::PromoBishop));
-				currentMoves.push_back(buildMoveFromContext(i, i - 7, MoveType::PromoKnight));
+				currentMoves.push_back(buildMoveFromContext(i, i - 7, Move::PromoQueen));
+				currentMoves.push_back(buildMoveFromContext(i, i - 7, Move::PromoRook));
+				currentMoves.push_back(buildMoveFromContext(i, i - 7, Move::PromoBishop));
+				currentMoves.push_back(buildMoveFromContext(i, i - 7, Move::PromoKnight));
 				continue;
 			}
-			currentMoves.push_back(buildMoveFromContext(i, i - 7, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, i - 7, Move::Normal));
 		}
 		boardLoop(leftCaptureReady, copyBoard, i)
 		{
 			if (i / 8 == 1)
 			{
-				currentMoves.push_back(buildMoveFromContext(i, i - 9, MoveType::PromoQueen));
-				currentMoves.push_back(buildMoveFromContext(i, i - 9, MoveType::PromoRook));
-				currentMoves.push_back(buildMoveFromContext(i, i - 9, MoveType::PromoBishop));
-				currentMoves.push_back(buildMoveFromContext(i, i - 9, MoveType::PromoKnight));
+				currentMoves.push_back(buildMoveFromContext(i, i - 9, Move::PromoQueen));
+				currentMoves.push_back(buildMoveFromContext(i, i - 9, Move::PromoRook));
+				currentMoves.push_back(buildMoveFromContext(i, i - 9, Move::PromoBishop));
+				currentMoves.push_back(buildMoveFromContext(i, i - 9, Move::PromoKnight));
 				continue;
 			}
-			currentMoves.push_back(buildMoveFromContext(i, i - 9, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, i - 9, Move::Normal));
 		}
 		if (extraInfo & Extra::EnPassantAvailable)
 		{
@@ -444,11 +446,11 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 			{
 				if (i % 8 == (extraInfo & Extra::EnPassantFile) - 1)
 				{
-					currentMoves.push_back(buildMoveFromContext(i, i - 7, MoveType::EnPassant));
+					currentMoves.push_back(buildMoveFromContext(i, i - 7, Move::EnPassant));
 				}
 				if (i % 8 == (extraInfo & Extra::EnPassantFile) + 1)
 				{
-					currentMoves.push_back(buildMoveFromContext(i, i - 9, MoveType::EnPassant));
+					currentMoves.push_back(buildMoveFromContext(i, i - 9, Move::EnPassant));
 				}
 			}
 		}
@@ -467,41 +469,41 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 			
 			if (rank == 1 && fullBoard[i + 16] == 0)
 			{
-				currentMoves.push_back(buildMoveFromContext(i, i + 16, MoveType::Normal));
+				currentMoves.push_back(buildMoveFromContext(i, i + 16, Move::Normal));
 			}
 			if (rank == 6)
 			{
-				currentMoves.push_back(buildMoveFromContext(i, i + 8, MoveType::PromoQueen));
-				currentMoves.push_back(buildMoveFromContext(i, i + 8, MoveType::PromoRook));
-				currentMoves.push_back(buildMoveFromContext(i, i + 8, MoveType::PromoBishop));
-				currentMoves.push_back(buildMoveFromContext(i, i + 8, MoveType::PromoKnight));
+				currentMoves.push_back(buildMoveFromContext(i, i + 8, Move::PromoQueen));
+				currentMoves.push_back(buildMoveFromContext(i, i + 8, Move::PromoRook));
+				currentMoves.push_back(buildMoveFromContext(i, i + 8, Move::PromoBishop));
+				currentMoves.push_back(buildMoveFromContext(i, i + 8, Move::PromoKnight));
 				continue;
 			}
-			currentMoves.push_back(buildMoveFromContext(i, i + 8, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, i + 8, Move::Normal));
 		}
 		boardLoop(rightCaptureReady, copyBoard, i)
 		{
 			if (i / 8 == 6)
 			{
-				currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::PromoQueen));
-				currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::PromoRook));
-				currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::PromoBishop));
-				currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::PromoKnight));
+				currentMoves.push_back(buildMoveFromContext(i, i + 9, Move::PromoQueen));
+				currentMoves.push_back(buildMoveFromContext(i, i + 9, Move::PromoRook));
+				currentMoves.push_back(buildMoveFromContext(i, i + 9, Move::PromoBishop));
+				currentMoves.push_back(buildMoveFromContext(i, i + 9, Move::PromoKnight));
 				continue;
 			}
-			currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, i + 9, Move::Normal));
 		}
 		boardLoop(leftCaptureReady, copyBoard, i)
 		{
 			if (i / 8 == 6)
 			{
-				currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::PromoQueen));
-				currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::PromoRook));
-				currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::PromoBishop));
-				currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::PromoKnight));
+				currentMoves.push_back(buildMoveFromContext(i, i + 7, Move::PromoQueen));
+				currentMoves.push_back(buildMoveFromContext(i, i + 7, Move::PromoRook));
+				currentMoves.push_back(buildMoveFromContext(i, i + 7, Move::PromoBishop));
+				currentMoves.push_back(buildMoveFromContext(i, i + 7, Move::PromoKnight));
 				continue;
 			}
-			currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, i + 7, Move::Normal));
 		}
 		if (extraInfo & Extra::EnPassantAvailable)
 		{
@@ -510,11 +512,11 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 			{
 				if (i % 8 == (extraInfo & Extra::EnPassantFile) - 1)
 				{
-					currentMoves.push_back(buildMoveFromContext(i, i + 9, MoveType::EnPassant));
+					currentMoves.push_back(buildMoveFromContext(i, i + 9, Move::EnPassant));
 				}
 				if (i % 8 == (extraInfo & Extra::EnPassantFile) + 1)
 				{
-					currentMoves.push_back(buildMoveFromContext(i, i + 7, MoveType::EnPassant));
+					currentMoves.push_back(buildMoveFromContext(i, i + 7, Move::EnPassant));
 				}
 			}
 		}
@@ -526,7 +528,7 @@ void Board::addKnightMoves(std::vector<Move>& currentMoves) const
 	{
 		boardLoop(boardIntersect(KnightMoves[i], ~pieceBoards[blacksTurn]), copyBoard2, j)
 		{
-			currentMoves.push_back(buildMoveFromContext(i, j, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, j, Move::Normal));
 		}
 	}
 }
@@ -534,22 +536,22 @@ void Board::addBishopMoves(std::vector<Move>& currentMoves) const
 {
 	boardLoop(pieceBoards[Piece::Bishop | blacksTurn], copyBoard, i)
 	{
-		genSlideMoves_ForwardScanning(SlideMoves[Direction::UpLeft]);
-		genSlideMoves_ForwardScanning(SlideMoves[Direction::UpRight]);
+		genSlideMoves_ForwardScanning(SlideMoves[Move::UpLeft]);
+		genSlideMoves_ForwardScanning(SlideMoves[Move::UpRight]);
 
-		genSlideMoves_BackwardScanning(SlideMoves[Direction::DownLeft]);
-		genSlideMoves_BackwardScanning(SlideMoves[Direction::DownRight]);
+		genSlideMoves_BackwardScanning(SlideMoves[Move::DownLeft]);
+		genSlideMoves_BackwardScanning(SlideMoves[Move::DownRight]);
 	}
 }
 void Board::addRookMoves(std::vector<Move>& currentMoves) const
 {
 	boardLoop(pieceBoards[Piece::Rook | blacksTurn], copyBoard, i)
 	{
-		genSlideMoves_ForwardScanning(SlideMoves[Direction::Up]);
-		genSlideMoves_ForwardScanning(SlideMoves[Direction::Right]);
+		genSlideMoves_ForwardScanning(SlideMoves[Move::Up]);
+		genSlideMoves_ForwardScanning(SlideMoves[Move::Right]);
 
-		genSlideMoves_BackwardScanning(SlideMoves[Direction::Down]);
-		genSlideMoves_BackwardScanning(SlideMoves[Direction::Left]);
+		genSlideMoves_BackwardScanning(SlideMoves[Move::Down]);
+		genSlideMoves_BackwardScanning(SlideMoves[Move::Left]);
 	}
 }
 void Board::addQueenMoves(std::vector<Move>& currentMoves) const
@@ -558,19 +560,19 @@ void Board::addQueenMoves(std::vector<Move>& currentMoves) const
 	{
 		//diagonal moves
 
-		genSlideMoves_ForwardScanning(SlideMoves[Direction::UpLeft]);
-		genSlideMoves_ForwardScanning(SlideMoves[Direction::UpRight]);
+		genSlideMoves_ForwardScanning(SlideMoves[Move::UpLeft]);
+		genSlideMoves_ForwardScanning(SlideMoves[Move::UpRight]);
 
-		genSlideMoves_BackwardScanning(SlideMoves[Direction::DownLeft]);
-		genSlideMoves_BackwardScanning(SlideMoves[Direction::DownRight]);
+		genSlideMoves_BackwardScanning(SlideMoves[Move::DownLeft]);
+		genSlideMoves_BackwardScanning(SlideMoves[Move::DownRight]);
 
 		//rook moves
 
-		genSlideMoves_ForwardScanning(SlideMoves[Direction::Up]);
-		genSlideMoves_ForwardScanning(SlideMoves[Direction::Right]);
+		genSlideMoves_ForwardScanning(SlideMoves[Move::Up]);
+		genSlideMoves_ForwardScanning(SlideMoves[Move::Right]);
 
-		genSlideMoves_BackwardScanning(SlideMoves[Direction::Down]);
-		genSlideMoves_BackwardScanning(SlideMoves[Direction::Left]);
+		genSlideMoves_BackwardScanning(SlideMoves[Move::Down]);
+		genSlideMoves_BackwardScanning(SlideMoves[Move::Left]);
 	}
 }
 void Board::addKingMoves(std::vector<Move>& currentMoves) const
@@ -579,7 +581,7 @@ void Board::addKingMoves(std::vector<Move>& currentMoves) const
 	{
 		boardLoop(boardIntersect(KingMoves[i], ~pieceBoards[blacksTurn]), copyBoard2, j)
 		{
-			currentMoves.push_back(buildMoveFromContext(i, j, MoveType::Normal));
+			currentMoves.push_back(buildMoveFromContext(i, j, Move::Normal));
 		}
 	}
 
@@ -592,22 +594,22 @@ void Board::addKingMoves(std::vector<Move>& currentMoves) const
 		{
 			if (extraInfo & Extra::Black_Long)
 			{
-				currentMoves.push_back(buildMoveFromContext(7 * 8 + 4, 7 * 8 + 2, MoveType::BlackLong));
+				currentMoves.push_back(buildMoveFromContext(7 * 8 + 4, 7 * 8 + 2, Move::BlackLong));
 			}
 			if (extraInfo & Extra::Black_Short)
 			{
-				currentMoves.push_back(buildMoveFromContext(7 * 8 + 4, 7 * 8 + 6, MoveType::BlackShort));
+				currentMoves.push_back(buildMoveFromContext(7 * 8 + 4, 7 * 8 + 6, Move::BlackShort));
 			}
 		}
 		else
 		{
 			if (extraInfo & Extra::White_Long)
 			{
-				currentMoves.push_back(buildMoveFromContext(4, 2, MoveType::WhiteLong));
+				currentMoves.push_back(buildMoveFromContext(4, 2, Move::WhiteLong));
 			}
 			if (extraInfo & Extra::White_Short)
 			{
-				currentMoves.push_back(buildMoveFromContext(4, 6, MoveType::WhiteShort));
+				currentMoves.push_back(buildMoveFromContext(4, 6, Move::WhiteShort));
 			}
 		}
 	}

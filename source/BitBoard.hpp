@@ -2,8 +2,6 @@
 
 #include "BitDefs.hpp"
 
-typedef ull BitBoard;
-
 inline constexpr BitBoard boardUnion(
 	BitBoard b1,
 	BitBoard const& b2)
@@ -48,24 +46,24 @@ inline constexpr BitBoard shiftDown(
 }
 
 inline constexpr BitBoard indexToBitBoard(
-	uc boardIndex)
+	BoardSquare boardIndex)
 {
-	return BitBoard{boardIndex < 64 ? 1ull << boardIndex : 0ull};
+	return boardIndex < 64 ? 1ull << boardIndex : 0ull;
 }
 
-inline constexpr int firstIndex(
+inline constexpr BoardSquare firstIndex(
 	BitBoard board)
 {
 	return board == 0 ? 64 : __builtin_ctzll(board);
 }
 
-inline constexpr int lastIndex(
+inline constexpr BoardSquare lastIndex(
 	BitBoard board)
 {
 	return board == 0 ? 64 : 63 - __builtin_clzll(board);
 }
 
-inline constexpr int cardinality(
+inline constexpr BoardSquare cardinality(
 	BitBoard board)
 {
 	return __builtin_popcountll(board);

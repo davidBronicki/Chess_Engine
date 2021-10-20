@@ -2,15 +2,15 @@
 
 #include <random>
 
-Hash Board::SquareHashes[64][16];
-Hash Board::ExtraHashes[256];
-Hash Board::TurnHash;
+HashType Board::SquareHashes[64][16];
+HashType Board::ExtraHashes[256];
+HashType Board::TurnHash;
 
 BitBoard Board::KnightMoves[64];
 BitBoard Board::SlideMoves[8][64];
 BitBoard Board::KingMoves[64];
 
-uc Board::RelativeDirection[64][64];
+Move::Direction Board::RelativeDirection[64][64];
 
 void Board::initializeGlobals()
 {
@@ -90,54 +90,54 @@ void Board::initializeGlobals()
 
 		//rook moves
 
-		SlideMoves[Direction::Right][i] = 0ull;
+		SlideMoves[Move::Right][i] = 0ull;
 		for (int a = x + 1; a < 8; ++a)
 		{
-			SlideMoves[Direction::Right][i] |= indexToBitBoard(a + 8 * y);
+			SlideMoves[Move::Right][i] |= indexToBitBoard(a + 8 * y);
 		}
 
-		SlideMoves[Direction::Left][i] = 0ull;
+		SlideMoves[Move::Left][i] = 0ull;
 		for (int a = x - 1; a >= 0; --a)
 		{
-			SlideMoves[Direction::Left][i] |= indexToBitBoard(a + 8 * y);
+			SlideMoves[Move::Left][i] |= indexToBitBoard(a + 8 * y);
 		}
 
-		SlideMoves[Direction::Up][i] = 0ull;
+		SlideMoves[Move::Up][i] = 0ull;
 		for (int a = y + 1; a < 8; ++a)
 		{
-			SlideMoves[Direction::Up][i] |= indexToBitBoard(x + 8 * a);
+			SlideMoves[Move::Up][i] |= indexToBitBoard(x + 8 * a);
 		}
 
-		SlideMoves[Direction::Down][i] = 0ull;
+		SlideMoves[Move::Down][i] = 0ull;
 		for (int a = y - 1; a >= 0; --a)
 		{
-			SlideMoves[Direction::Down][i] |= indexToBitBoard(x + 8 * a);
+			SlideMoves[Move::Down][i] |= indexToBitBoard(x + 8 * a);
 		}
 
 		//bishop moves / diagonal moves
 
-		SlideMoves[Direction::UpRight][i] = 0ull;
+		SlideMoves[Move::UpRight][i] = 0ull;
 		for (int a = x + 1, b = y + 1; a < 8 && b < 8; ++a, ++b)
 		{
-			SlideMoves[Direction::UpRight][i] |= indexToBitBoard(a + 8 * b);
+			SlideMoves[Move::UpRight][i] |= indexToBitBoard(a + 8 * b);
 		}
 
-		SlideMoves[Direction::UpLeft][i] = 0ull;
+		SlideMoves[Move::UpLeft][i] = 0ull;
 		for (int a = x - 1, b = y + 1; a >= 0 && b < 8; --a, ++b)
 		{
-			SlideMoves[Direction::UpLeft][i] |= indexToBitBoard(a + 8 * b);
+			SlideMoves[Move::UpLeft][i] |= indexToBitBoard(a + 8 * b);
 		}
 
-		SlideMoves[Direction::DownRight][i] = 0ull;
+		SlideMoves[Move::DownRight][i] = 0ull;
 		for (int a = x + 1, b = y - 1; a < 8 && b >= 0; ++a, --b)
 		{
-			SlideMoves[Direction::DownRight][i] |= indexToBitBoard(a + 8 * b);
+			SlideMoves[Move::DownRight][i] |= indexToBitBoard(a + 8 * b);
 		}
 
-		SlideMoves[Direction::DownLeft][i] = 0ull;
+		SlideMoves[Move::DownLeft][i] = 0ull;
 		for (int a = x - 1, b = y - 1; a >= 0 && b >= 0; --a, --b)
 		{
-			SlideMoves[Direction::DownLeft][i] |= indexToBitBoard(a + 8 * b);
+			SlideMoves[Move::DownLeft][i] |= indexToBitBoard(a + 8 * b);
 		}
 
 		//king moves;
@@ -178,7 +178,7 @@ void Board::initializeGlobals()
 					int j = 8 * y2 + x2;
 					if (i == j)
 					{
-						RelativeDirection[i][j] = Direction::None;
+						RelativeDirection[i][j] = Move::None;
 						continue;
 					}
 					int dx = x2 - x1;
@@ -186,38 +186,38 @@ void Board::initializeGlobals()
 					if (dx == 0)
 					{
 						if (dy > 0)
-							RelativeDirection[i][j] = Direction::Up;
+							RelativeDirection[i][j] = Move::Up;
 						else
-							RelativeDirection[i][j] = Direction::Down;
+							RelativeDirection[i][j] = Move::Down;
 						continue;
 					}
 					if (dy == 0)
 					{
 						if (dx > 0)
-							RelativeDirection[i][j] = Direction::Right;
+							RelativeDirection[i][j] = Move::Right;
 						else
-							RelativeDirection[i][j] = Direction::Left;
+							RelativeDirection[i][j] = Move::Left;
 						continue;
 					}
-					RelativeDirection[i][j] = Direction::None;
+					RelativeDirection[i][j] = Move::None;
 					if (dx == dy)
 					{
 						if (dx > 0)
-							RelativeDirection[i][j] = Direction::UpRight;
+							RelativeDirection[i][j] = Move::UpRight;
 						else
-							RelativeDirection[i][j] = Direction::DownLeft;
+							RelativeDirection[i][j] = Move::DownLeft;
 						continue;
 					}
 					if (dx == -dy)
 					{
 						if (dx > 0)
-							RelativeDirection[i][j] = Direction::DownRight;
+							RelativeDirection[i][j] = Move::DownRight;
 						else
-							RelativeDirection[i][j] = Direction::UpLeft;
+							RelativeDirection[i][j] = Move::UpLeft;
 						continue;
 					}
 					if ((abs(dx) == 2 && abs(dy) == 1) || (abs(dx) == 1 && abs(dy) == 2))
-						RelativeDirection[i][j] = Direction::Knight;
+						RelativeDirection[i][j] = Move::Knight;
 				}
 			}
 		}

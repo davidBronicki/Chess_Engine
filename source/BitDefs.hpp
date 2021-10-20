@@ -5,10 +5,16 @@ typedef unsigned short us;
 typedef unsigned long ul;
 typedef unsigned long long ull;
 
+typedef uc BoardSquare;
+typedef ull BitBoard;
+typedef ull HashType;
+typedef uc ExtraType;
+typedef short PlyType;
+typedef uc PieceType;
 
-namespace Piece
+struct Piece
 {
-	enum names : uc{
+	enum Type : PieceType{
 	White	 =	0b0000,
 	Black	 =	0b0001,
 	Pawn	 =	0b0010,//0x2
@@ -24,11 +30,11 @@ namespace Piece
 
 	IndexAll =	0b1000,//index labelling the "all pieces" bit board
 	IndexNone=	0b1001};//index labelling the "no pieces" bit board
-}
+};
 
-namespace Extra
+struct Extra
 {
-	enum names : uc{
+	enum name : ExtraType{
 	White_Short			=	0b00010000,
 	White_King			=	0b00010000,
 
@@ -46,28 +52,11 @@ namespace Extra
 	EnPassantAvailable	=	0b00001000,
 	EnPassantFile		=	0b00000111,
 	EnPassantInfo		=	0b00001111};
-}
+};
 
-namespace MoveType
+struct Move
 {
-	enum names : uc{
-	Normal,
-	EnPassant,
-	PromoQueen,
-	PromoRook,
-	PromoBishop,
-	PromoKnight,
-	WhiteShort,
-	BlackShort,
-	WhiteLong,
-	BlackLong,
-	NullMove};
-}
-
-
-namespace Direction
-{
-	enum names : uc{
+	enum Direction : uc{
 	UpLeft,
 	Up,
 	UpRight,
@@ -78,7 +67,35 @@ namespace Direction
 	Left,
 	Knight,
 	None};
+
+	enum Type : uc{
+	Normal,
+	EnPassant,
+	PromoQueen,
+	PromoRook,
+	PromoBishop,
+	PromoKnight,
+	WhiteShort,
+	BlackShort,
+	WhiteLong,
+	BlackLong,
+	NullMove} moveType;//1 byte
+	
+	BoardSquare sourceSquare;//1 byte
+	BoardSquare targetSquare;//1 byte
+	PieceType deltaSource;//1 byte
+	PieceType deltaTarget;//1 byte
+	ExtraType deltaExtraInfo;//1 byte
+	PlyType deltaPawnOrCapturePly;//2 bytes
+};
+
+inline bool operator==(Move a, Move b)
+{
+	// return (*(ull*)(void*)(&a) >>  8) == (*(ull*)(void*)(&b) >> 8);
+	return *(ull*)(void*)(&a) == *(ull*)(void*)(&b);
 }
+
+extern Move nonMove;
 
 namespace
 {

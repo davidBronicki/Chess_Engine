@@ -1,5 +1,9 @@
 #include "Engine.hpp"
 
+#include "HashTable.hpp"
+#include "EvaluationContext.hpp"
+#include "Board.hpp"
+
 #include <thread>
 
 using namespace std;
@@ -15,16 +19,14 @@ Engine::Engine()
 :
 	interfaceParsingTokens("[\\s]"),
 	fenParsingTokens("[/]"),
-	quitFlag(false),
-	stopFlag(false),
-	debugFlag(false),
-	hashTable(24),
-	board(make_shared<Board>()),
-	keepNStacks(1),
-	depthWalkValue(1),
-	quiescenceSearchDepth(4)
+	context{new EvaluationContext()},
+	hashTable{new HashTable(24)},
+	board{new Board()}
 {
+	
 }
+
+Engine::~Engine(){}
 
 void Engine::initPos()
 {
@@ -100,4 +102,33 @@ void Engine::initPos(string fenBoard)
 
 	board->initPieceBoards();
 	board->resetHash();
+}
+
+
+EvaluationContext::EvaluationContext()
+:
+	quitFlag(false),
+	stopFlag(false),
+	debugFlag(false),
+	keepNStacks(1),
+	depthWalkValue(1),
+	quiescenceSearchDepth(4)
+{
+	resetGoFlags();
+}
+
+void EvaluationContext::resetGoFlags()
+{
+	ponderFlag = false;
+	mateSearchFlag = false;
+	infiniteFlag = false;
+
+	moveTime = 0;
+	wTime = 0;
+	bTime = 0;
+	wInc = 0;
+	bInc = 0;
+	movesToGo = 0;
+	maxDepth = 0;
+	maxNodes = 0;
 }
