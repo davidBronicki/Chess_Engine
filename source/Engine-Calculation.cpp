@@ -84,11 +84,11 @@ Value Engine::quiescenceSearch(
 	bool inBounds = false;//if still false at end then we have failed-low
 	for (auto&& move : moves)
 	{
-		bool temp = advance(move);
-		if (!temp)//not legal move
+		bool isQuiescent = board->isQuiescent(move);
+		if (!advance(move))//not legal move
 			continue;
-		legalMoveExists = legalMoveExists || temp;
-		if (board->isQuiescent(move))
+		legalMoveExists = true;
+		if (isQuiescent)
 		{
 			back();
 			continue;
@@ -203,12 +203,12 @@ Value Engine::nonQuiescenceSearch(
 				return -hBoard.value;
 
 				case HashBoard::AllNode://upper bound value
-				if (hBoard.value <= alpha) return alpha;
+				if (hBoard.value <= alpha) return -alpha;
 				else beta = hBoard.value;//try setting depth to hBoard depth
 				break;
 
 				case HashBoard::CutNode://lower bound value
-				if (hBoard.value >= beta) return beta;
+				if (hBoard.value >= beta) return -beta;
 				else alpha = hBoard.value;//try setting depth to hBoard depth
 				break;
 			}
