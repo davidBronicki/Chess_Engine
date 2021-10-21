@@ -151,20 +151,6 @@ Value Engine::nonQuiescenceSearch(
 
 	if (searchDepth == 0)
 	{
-		// short initialSearchDepth = engine.quiescenceSearchDepth % engine.depthWalkValue;
-		// initialSearchDepth = initialSearchDepth == 0 ?
-		// 	engine.depthWalkValue :
-		// 	initialSearchDepth;
-		
-		// for (short currentSearchDepth = initialSearchDepth;
-		// 	currentSearchDepth <= engine.quiescenceSearchDepth;
-		// 	currentSearchDepth += engine.depthWalkValue)
-		// {
-		// 	auto value = Engine::quiescenceSearch(engine,
-		// 		-beta, -alpha, currentSearchDepth, rootPly);
-		// 	if (currentSearchDepth == engine.quiescenceSearchDepth)
-		// 		return -value;
-		// }
 		return Engine::quiescenceSearch(
 			alpha, beta, context->quiescenceSearchDepth, rootPly);
 	}
@@ -195,7 +181,7 @@ Value Engine::nonQuiescenceSearch(
 		hashExistence = HashTable::HashesEqual;
 		//if searched to equal or better depth
 		//then we can trust the result
-		if (hBoard.searchDepth >= searchDepth)
+		if (hBoard.searchDepth >= searchDepth && hBoard.rootPly + 1 < rootPly)
 		{
 			switch (hBoard.nodeType)
 			{
@@ -204,12 +190,23 @@ Value Engine::nonQuiescenceSearch(
 
 				case HashBoard::AllNode://upper bound value
 				if (hBoard.value <= alpha) return -alpha;
-				else beta = hBoard.value;//try setting depth to hBoard depth
+				else
+				{
+					beta = hBoard.value;//try setting depth to hBoard depth
+					searchDepth = hBoard.searchDepth;
+				}
 				break;
 
 				case HashBoard::CutNode://lower bound value
 				if (hBoard.value >= beta) return -beta;
-				else alpha = hBoard.value;//try setting depth to hBoard depth
+				else
+				{
+					alpha = hBoard.value;//try setting depth to hBoard depth
+					searchDepth = hBoard.searchDepth;
+				}
+				break;
+
+				case HashBoard::Quiescent:
 				break;
 			}
 		}
@@ -314,6 +311,13 @@ vector<tuple<Value, Move>> Engine::rootSearch(short searchDepth)
 
 	vector<Move> moves(board->generateMoves());
 
+	sort(moves.begin(), moves.end(), [this](Move a, Move b)
+	{
+		Value A = hashEval(a);
+		if (A.value == -HUGE_VALF) return false;//move not valid or just that bad
+		return A > hashEval(b);
+	});
+
 	vector<Value> values;
 	vector<short> indices;
 
@@ -327,14 +331,14 @@ vector<tuple<Value, Move>> Engine::rootSearch(short searchDepth)
 
 		auto value = nonQuiescenceSearch(
 			-beta, -alpha, searchDepth - 1, rootPly);
-		// alpha = max(alpha, value);
+		alpha = max(alpha, value);
 		values.push_back(value);
 		indices.push_back(i);//keeps track of legal moves and implicitly pairs with value
 		back();
 	}
 
 	//sort into decending order, best moves first
-	sort(indices.begin(), indices.end(), [values](short a, short b)
+	stable_sort(indices.begin(), indices.end(), [values](short a, short b)
 	{
 		return values[a] > values[b];
 	});

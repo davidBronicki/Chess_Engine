@@ -15,7 +15,8 @@ struct HashBoard
 	{
 		PrincipleVariation,
 		AllNode,
-		CutNode
+		CutNode,
+		Quiescent
 	} nodeType;
 };
 

@@ -2,6 +2,7 @@
 
 #include "Board.hpp"
 #include "EvaluationContext.hpp"
+#include "HashTable.hpp"
 
 #include <math.h>
 
@@ -37,4 +38,16 @@ bool Engine::threeMoveRepetition()
 			++count;
 	}
 	return count >= 3;
+}
+
+
+Value Engine::hashEval(Move move)
+{
+	board->performMove(move);
+	HashBoard const& hBoard{hashTable->get(board->hash)};
+	HashType hash = board->hash;
+	board->reverseMove(move);
+
+	if (hash != hBoard.hash) return Value{-HUGE_VALF};
+	return -hBoard.value;
 }

@@ -57,6 +57,7 @@ class Engine
 	bool advance(Move move);
 	// uc nonQuiescentAdvance(Move move);
 	void back();
+	Value hashEval(Move move);
 
 	Value quiescenceSearch(
 		Value alpha, Value beta, short searchDepth, short rootPly);
