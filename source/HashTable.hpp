@@ -11,12 +11,16 @@ struct HashBoard
 	PlyType searchDepth;
 	PlyType rootPly;
 
-	enum CutType : uc
+	enum NodeType : uc
 	{
 		PrincipleVariation,
 		AllNode,
 		CutNode,
-		Quiescent
+		Quiescence_PV,
+		Quiescence_All,
+		Quiescence_Cut,
+		Quiescence_Mask = Quiescence_PV,
+		TypeInfo_Mask = CutNode
 	} nodeType;
 };
 
@@ -47,13 +51,23 @@ class HashTable
 	HashTable& operator=(HashTable const&) = delete;
 
 	HashBoard const& get(HashType hash) const {return table[hash & mask];}
-	void set(HashBoard board) {//TODO: optimize to move instead of copy? build in place?
+	void set(HashBoard&& board) {//TODO: optimize to move instead of copy? build in place?
 		HashBoard& slot = table[board.hash & mask];
 		if (slot.hash == 0)
 			occupancy++;
 		slot = board;
 	}
 
-	size_t getSize() {return size;}
-	size_t getOccupancy() {return occupancy;}
+	HashBoard const& nonQuiescence_HandleHash(HashType const& hash,
+		HashOccupancyType& existence, Value& alpha, Value& beta,
+		std::vector<Move>& moves, PlyType searchDepth, PlyType rootPly) const;
+
+	HashBoard const& quiescence_HandleHash(HashType const& hash,
+		HashOccupancyType& existence, Value& alpha, Value& beta,
+		std::vector<Move>& moves, PlyType searchDepth, PlyType rootPly) const;
+
+	size_t getSize() const {return size;}
+	size_t getOccupancy() const {return occupancy;}
+
+	void reset();
 };

@@ -60,12 +60,12 @@ class Engine
 	Value hashEval(Move move);
 
 	Value quiescenceSearch(
-		Value alpha, Value beta, short searchDepth, short rootPly);
+		Value alpha, Value beta, PlyType searchDepth, PlyType rootPly);
 
 	Value nonQuiescenceSearch(
-		Value alpha, Value beta, short searchDepth, short rootPly);
+		Value alpha, Value beta, PlyType searchDepth, PlyType rootPly);
 
-	std::vector<std::tuple<Value, Move>> rootSearch(short searchDepth);
+	std::vector<std::tuple<Value, Move>> rootSearch(PlyType searchDepth);
 
 	public:
 

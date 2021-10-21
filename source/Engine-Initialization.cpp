@@ -132,3 +132,10 @@ void EvaluationContext::resetGoFlags()
 	maxDepth = 0;
 	maxNodes = 0;
 }
+
+void HashTable::reset()
+{
+	delete[] table;
+	table = new HashBoard[size]{};
+	occupancy = 0;
+}
