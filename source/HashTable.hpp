@@ -13,14 +13,14 @@ struct HashBoard
 
 	enum NodeType : uc
 	{
-		PrincipleVariation,
-		AllNode,
-		CutNode,
-		Quiescence_PV,
-		Quiescence_All,
-		Quiescence_Cut,
-		Quiescence_Mask = Quiescence_PV,
-		TypeInfo_Mask = CutNode
+		PrincipleVariation	= 0b000,
+		AllNode				= 0b001,
+		CutNode				= 0b010,
+		TypeInfo_Mask		= 0b011,
+		Quiescence_PV		= 0b100,
+		Quiescence_All		= 0b101,
+		Quiescence_Cut		= 0b110,
+		Quiescence_Mask		= 0b100,
 	} nodeType;
 };
 
@@ -58,7 +58,7 @@ class HashTable
 		slot = board;
 	}
 
-	HashBoard const& nonQuiescence_HandleHash(HashType const& hash,
+	HashBoard const& main_HandleHash(HashType const& hash,
 		HashOccupancyType& existence, Value& alpha, Value& beta,
 		std::vector<Move>& moves, PlyType searchDepth, PlyType rootPly) const;
 

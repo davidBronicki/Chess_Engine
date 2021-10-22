@@ -56,7 +56,7 @@ Value Engine::hashEval(Move move)
 	return -hBoard.value;
 }
 
-HashBoard const& HashTable::nonQuiescence_HandleHash(HashType const& hash,
+HashBoard const& HashTable::main_HandleHash(HashType const& hash,
 	HashOccupancyType& existence, Value& alpha, Value& beta,
 	std::vector<Move>& moves, PlyType searchDepth, PlyType rootPly) const
 {
@@ -70,7 +70,7 @@ HashBoard const& HashTable::nonQuiescence_HandleHash(HashType const& hash,
 		existence = HashTable::HashesEqual;
 		//if searched to equal or better depth
 		//then we can trust the result
-		if (hBoard.searchDepth >= searchDepth && hBoard.rootPly + 1 < rootPly)
+		if (hBoard.searchDepth >= searchDepth)
 		{
 			switch (hBoard.nodeType)
 			{
@@ -141,7 +141,8 @@ HashBoard const& HashTable::quiescence_HandleHash(HashType const& hash,
 		existence = HashTable::HashesEqual;
 		//if searched to equal or better depth
 		//then we can trust the result
-		if (hBoard.searchDepth >= searchDepth && hBoard.rootPly + 1 < rootPly)
+		if (hBoard.searchDepth >= searchDepth ||//deeper quiescent search
+			!(hBoard.nodeType & HashBoard::Quiescence_Mask))//non-quiescent search (always equal or better search)
 		{
 			switch (hBoard.nodeType & HashBoard::TypeInfo_Mask)//we don't care if its quiescent or not
 			{

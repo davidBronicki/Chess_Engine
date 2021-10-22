@@ -34,6 +34,8 @@ Value evaluate(Board const& board)
 	value.value -= 3 * cardinality(board.pieceBoards[Piece::Bishop | Piece::Black]);
 	value.value -= 5 * cardinality(board.pieceBoards[Piece::Rook | Piece::Black]);
 	value.value -= 9 * cardinality(board.pieceBoards[Piece::Queen | Piece::Black]);
+
+	value.value += 0.5;
 	return board.blacksTurn ? -value : value;
 }
 
@@ -74,7 +76,7 @@ inline bool quiescence_PVNode_RegisterCondition(
 		hBoard.rootPly + 2 <= rootPly;//not sure of this
 }
 
-inline bool nonQuiescence_CutNode_RegisterCondition(
+inline bool main_CutNode_RegisterCondition(
 	HashBoard const& hBoard, HashTable::HashOccupancyType hashExistence,
 	PlyType searchDepth, PlyType rootPly)
 {
@@ -83,7 +85,7 @@ inline bool nonQuiescence_CutNode_RegisterCondition(
 		hBoard.nodeType != HashBoard::PrincipleVariation;
 }
 
-inline bool nonQuiescence_AllNode_RegisterCondition(
+inline bool main_AllNode_RegisterCondition(
 	HashBoard const& hBoard, HashTable::HashOccupancyType hashExistence,
 	PlyType searchDepth, PlyType rootPly)
 {
@@ -91,7 +93,7 @@ inline bool nonQuiescence_AllNode_RegisterCondition(
 		hBoard.rootPly + 2 <= rootPly;
 }
 
-inline bool nonQuiescence_PVNode_RegisterCondition(
+inline bool main_PVNode_RegisterCondition(
 	HashBoard const& hBoard, HashTable::HashOccupancyType hashExistence,
 	PlyType searchDepth, PlyType rootPly)
 {
@@ -109,7 +111,7 @@ Value Engine::quiescenceSearch(
 		return Value();
 	}
 
-	if (board->plySinceLastPawnOrCapture >= 100 ||
+	if (board->plySinceLastPawnOrCapture >= 99 ||
 		threeMoveRepetition())
 	{
 		//TODO: check for off-by-one issue
@@ -122,14 +124,18 @@ Value Engine::quiescenceSearch(
 		return -evaluate(*board);
 	}
 
+	if (!board->inCheck())
 	{
-		//we can always just not take. should be better quickly though
-		Move nullMove = board->buildMoveFromContext(0, 0, Move::NullMove);
-		board->performMove(nullMove);
+		// //we can always just not take, but not if we're in check
+		// //should become a good position quickly, so search shallow
+		// Move nullMove = board->buildMoveFromContext(0, 0, Move::NullMove);
+		// board->performMove(nullMove);
 
-		alpha = max(alpha, quiescenceSearch(-beta, -alpha, searchDepth - 2, rootPly));
+		// alpha = max(alpha, quiescenceSearch(-beta, -alpha, searchDepth - 2, rootPly));
 
-		board->reverseMove(nullMove);
+		// board->reverseMove(nullMove);
+
+		alpha = max(alpha, evaluate(*board));
 	}
 
 	if (alpha >= beta)//null move (not taking) fails high
@@ -140,8 +146,6 @@ Value Engine::quiescenceSearch(
 	HashTable::HashOccupancyType hashExistence;
 	HashBoard const& hBoard = hashTable->quiescence_HandleHash(
 		board->hash, hashExistence, alpha, beta, moves, searchDepth, rootPly);
-
-	//TODO: use hash table
 
 	bool legalMoveExists = false;
 	bool nonQuiescentMoveExists = false;
@@ -171,12 +175,12 @@ Value Engine::quiescenceSearch(
 			if (alpha >= beta)//not in bounds, failed high
 			{
 				back();
-				if (quiescence_CutNode_RegisterCondition(hBoard,
-					hashExistence, searchDepth, rootPly))
-				{
-					hashTable->set({board->hash, beta, moves[i],
-						searchDepth, rootPly, HashBoard::Quiescence_Cut});
-				}
+				// if (quiescence_CutNode_RegisterCondition(hBoard,
+				// 	hashExistence, searchDepth, rootPly))
+				// {
+				// 	hashTable->set({board->hash, beta, moves[i],
+				// 		searchDepth, rootPly, HashBoard::Quiescence_Cut});
+				// }
 
 				//impose hard bound, beta is a lower bound. (value is "too good")
 				return -beta;
@@ -196,31 +200,31 @@ Value Engine::quiescenceSearch(
 
 	if (inBounds)//in bounds, successful search
 	{
-		if (quiescence_PVNode_RegisterCondition(hBoard,
-			hashExistence, searchDepth, rootPly))
-		{
-			hashTable->set({board->hash, alpha, moves[bestMoveIndex],
-				searchDepth, rootPly, HashBoard::Quiescence_PV});
-		}
+		// if (quiescence_PVNode_RegisterCondition(hBoard,
+		// 	hashExistence, searchDepth, rootPly))
+		// {
+		// 	hashTable->set({board->hash, alpha, moves[bestMoveIndex],
+		// 		searchDepth, rootPly, HashBoard::Quiescence_PV});
+		// }
 
 		//alpha is an exact result (for quiescence search)
 		return -alpha;
 	}
 	else//not in bounds, failed low
 	{
-		if (quiescence_AllNode_RegisterCondition(hBoard,
-			hashExistence, searchDepth, rootPly))
-		{
-			hashTable->set({board->hash, alpha, moves[0],//no move info on all-nodes
-				searchDepth, rootPly, HashBoard::Quiescence_All});
-		}
+		// if (quiescence_AllNode_RegisterCondition(hBoard,
+		// 	hashExistence, searchDepth, rootPly))
+		// {
+		// 	hashTable->set({board->hash, alpha, moves[0],//no move info on all-nodes
+		// 		searchDepth, rootPly, HashBoard::Quiescence_All});
+		// }
 
 		//impose hard bound, alpha is an upper bound. (value is "too bad")
 		return -alpha;
 	}
 }
 
-Value Engine::nonQuiescenceSearch(
+Value Engine::mainSearch(
 	Value alpha, Value beta, PlyType searchDepth, PlyType rootPly)
 {
 	//negamax search algorithm
@@ -235,7 +239,7 @@ Value Engine::nonQuiescenceSearch(
 		return Value();
 	}
 
-	if (board->plySinceLastPawnOrCapture >= 100 ||
+	if (board->plySinceLastPawnOrCapture >= 99 ||
 		threeMoveRepetition())
 	{
 		//TODO: check for off-by-one issue
@@ -246,12 +250,20 @@ Value Engine::nonQuiescenceSearch(
 
 
 	HashTable::HashOccupancyType hashExistence;
-	HashBoard const& hBoard = hashTable->nonQuiescence_HandleHash(
+	HashBoard const& hBoard = hashTable->main_HandleHash(
 		board->hash, hashExistence, alpha, beta, moves, searchDepth, rootPly);
 
 	if (alpha == beta)//hashTable may set it this way to indicate a return condition
 	{
-		return alpha;
+		//make sure we aren't about to draw and the opponents can't force a draw
+		bool aboutToDraw = false;
+		if (advance(hBoard.bestResponse))
+		{
+			aboutToDraw = threeMoveRepetition();
+			back();
+		}
+		if (board->plySinceLastPawnOrCapture < 97 && !aboutToDraw)
+			return alpha;
 	}
 
 	//TODO: perform heuristic ordering
@@ -269,7 +281,7 @@ Value Engine::nonQuiescenceSearch(
 
 		legalMoveExists = true;
 
-		Value value{nonQuiescenceSearch(-beta, -alpha, searchDepth - 1, rootPly)};
+		Value value{mainSearch(-beta, -alpha, searchDepth - 1, rootPly)};
 
 		if (value > alpha)
 		{
@@ -279,12 +291,12 @@ Value Engine::nonQuiescenceSearch(
 			if (alpha >= beta)//not in bounds, failed high
 			{
 				back();
-				if (nonQuiescence_CutNode_RegisterCondition(hBoard,
-					hashExistence, searchDepth, rootPly))
-				{
-					hashTable->set({board->hash, beta, moves[i],
-						searchDepth, rootPly, HashBoard::CutNode});
-				}
+				// if (main_CutNode_RegisterCondition(hBoard,
+				// 	hashExistence, searchDepth, rootPly))
+				// {
+				// 	hashTable->set({board->hash, beta, moves[i],
+				// 		searchDepth, rootPly, HashBoard::CutNode});
+				// }
 
 				//impose hard bound, beta is a lower bound. (value is "too good")
 				return -beta;
@@ -300,24 +312,24 @@ Value Engine::nonQuiescenceSearch(
 
 	if (inBounds)//in bounds, successful search
 	{
-		if (nonQuiescence_PVNode_RegisterCondition(hBoard,
-			hashExistence, searchDepth, rootPly))
-		{
-			hashTable->set({board->hash, alpha, moves[bestMoveIndex],
-				searchDepth, rootPly, HashBoard::PrincipleVariation});
-		}
+		// if (main_PVNode_RegisterCondition(hBoard,
+		// 	hashExistence, searchDepth, rootPly))
+		// {
+		// 	hashTable->set({board->hash, alpha, moves[bestMoveIndex],
+		// 		searchDepth, rootPly, HashBoard::PrincipleVariation});
+		// }
 
 		//alpha is an exact result
 		return -alpha;
 	}
 	else//not in bounds, failed low
 	{
-		if (nonQuiescence_AllNode_RegisterCondition(hBoard,
-			hashExistence, searchDepth, rootPly))
-		{
-			hashTable->set({board->hash, alpha, moves[0],//no move info on all-nodes
-				searchDepth, rootPly, HashBoard::AllNode});
-		}
+		// if (main_AllNode_RegisterCondition(hBoard,
+		// 	hashExistence, searchDepth, rootPly))
+		// {
+		// 	hashTable->set({board->hash, alpha, moves[0],//no move info on all-nodes
+		// 		searchDepth, rootPly, HashBoard::AllNode});
+		// }
 
 		//impose hard bound, alpha is an upper bound. (value is "too bad")
 		return -alpha;
@@ -333,7 +345,7 @@ vector<tuple<Value, Move>> Engine::rootSearch(PlyType searchDepth)
 
 	vector<Move> moves(board->generateMoves());
 
-	sort(moves.begin(), moves.end(), [this](Move a, Move b)
+	stable_sort(moves.begin(), moves.end(), [this](Move a, Move b)
 	{
 		Value A = hashEval(a);
 		if (A.value == -HUGE_VALF) return false;//move not valid or getting mated
@@ -351,7 +363,7 @@ vector<tuple<Value, Move>> Engine::rootSearch(PlyType searchDepth)
 			continue;
 		}
 
-		auto value = nonQuiescenceSearch(
+		auto value = mainSearch(
 			-beta, -alpha, searchDepth - 1, rootPly);
 		alpha = max(alpha, value);
 		values.push_back(value);
