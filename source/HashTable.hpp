@@ -42,8 +42,8 @@ class HashTable
 	HashTable(size_t tableSize)
 	:
 		table{new HashBoard[1ull << tableSize]{}},
-		size(1ull << tableSize),
-		mask((1ull << tableSize) - 1)
+		size{1ull << tableSize},
+		mask{(1ull << tableSize) - 1}
 	{}
 	~HashTable(){delete[] table;}
 
@@ -51,7 +51,7 @@ class HashTable
 	HashTable& operator=(HashTable const&) = delete;
 
 	HashBoard const& get(HashType hash) const {return table[hash & mask];}
-	void set(HashBoard&& board) {//TODO: optimize to move instead of copy? build in place?
+	void set(HashBoard board) {//TODO: optimize to move instead of copy? build in place?
 		HashBoard& slot = table[board.hash & mask];
 		if (slot.hash == 0)
 			occupancy++;

@@ -48,6 +48,8 @@ struct Extra
 	Black_Queen			=	0b10000000,
 
 	CastleInfo			=	0b11110000,
+	WhiteCastleInfo		=	0b00110000,
+	BlackCastleInfo		=	0b11000000,
 
 	EnPassantAvailable	=	0b00001000,
 	EnPassantFile		=	0b00000111,

@@ -30,11 +30,12 @@ Engine::~Engine(){}
 
 void Engine::initPos()
 {
-	initPos("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-	board->extraInfo = 0;
+	board->extraInfo = Extra::CastleInfo;
 	board->blacksTurn = false;
 	board->plyNumber = 0;
 	board->plySinceLastPawnOrCapture = 0;
+	initPos("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+	board->resetHash();
 }
 
 void Engine::initPos(string fenBoard)
@@ -101,7 +102,6 @@ void Engine::initPos(string fenBoard)
 	}
 
 	board->initPieceBoards();
-	board->resetHash();
 }
 
 

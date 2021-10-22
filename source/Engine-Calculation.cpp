@@ -115,7 +115,6 @@ Value Engine::quiescenceSearch(
 		threeMoveRepetition())
 	{
 		//TODO: check for off-by-one issue
-		//TODO: clamp?
 		return Value();
 	}
 
@@ -124,7 +123,7 @@ Value Engine::quiescenceSearch(
 		return -evaluate(*board);
 	}
 
-	if (!board->inCheck())
+	if (!board->inCheck())//can't choose a different move when in check
 	{
 		// //we can always just not take, but not if we're in check
 		// //should become a good position quickly, so search shallow
@@ -146,6 +145,20 @@ Value Engine::quiescenceSearch(
 	HashTable::HashOccupancyType hashExistence;
 	HashBoard const& hBoard = hashTable->quiescence_HandleHash(
 		board->hash, hashExistence, alpha, beta, moves, searchDepth, rootPly);
+
+	if (alpha >= beta)//trusted exact or bounded move in the hash table
+	{
+		/*
+		TODO:
+		Asperation window to not acidentally take a draw.
+		Alternatively we could add a "repetition number" hash
+		which we give to the hash table as a modifier each time.
+
+		I kind of like this second idea, but it will require some
+		reworking of the code, so I'm trying the first idea first.
+		*/
+		return -alpha;
+	}
 
 	bool legalMoveExists = false;
 	bool nonQuiescentMoveExists = false;
@@ -246,25 +259,51 @@ Value Engine::mainSearch(
 		return Value();
 	}
 
-	vector<Move> moves(board->generateMoves());
+	vector<Move> moves{board->generateMoves()};
 
-
+	Value alpha_prime{alpha};//copies in case we have to reset in failed asperation window
+	Value beta_prime{beta};
 	HashTable::HashOccupancyType hashExistence;
-	HashBoard const& hBoard = hashTable->main_HandleHash(
-		board->hash, hashExistence, alpha, beta, moves, searchDepth, rootPly);
+	HashBoard const& hBoard = hashTable->get(board->hash);
+		hashTable->main_HandleHash(
+			board->hash, hashExistence, alpha, beta, moves, searchDepth, rootPly);
+	if (alpha == beta) return -alpha;
+	//commented code does not break recursion correctly.
 
-	if (alpha == beta)//hashTable may set it this way to indicate a return condition
-	{
-		//make sure we aren't about to draw and the opponents can't force a draw
-		bool aboutToDraw = false;
-		if (advance(hBoard.bestResponse))
-		{
-			aboutToDraw = threeMoveRepetition();
-			back();
-		}
-		if (board->plySinceLastPawnOrCapture < 97 && !aboutToDraw)
-			return alpha;
-	}
+
+	// if (alpha_prime.value - beta_prime.value > 0.11 ||
+	// 	isinf(alpha_prime.value) || isinf(beta_prime.value))//don't do a hash check if already in a null window
+	// {
+	// 	hashTable->main_HandleHash(
+	// 		board->hash, hashExistence, alpha, beta, moves, searchDepth, rootPly);
+	// 	/*
+	// 	TODO:
+	// 	Asperation window to not acidentally take a draw.
+	// 	Alternatively we could add a "repetition number" hash
+	// 	which we give to the hash table as a modifier each time.
+
+	// 	I kind of like this second idea, but it will require some
+	// 	reworking of the code, so I'm trying the first idea first.
+	// 	*/
+
+	// 	if (alpha == beta)//hashTable may set it this way to indicate a return condition
+	// 	{
+	// 		alpha.value = max((float)(alpha.value - 0.05), alpha_prime.value);
+	// 		beta.value = max((float)(beta.value + 0.05), beta_prime.value);
+
+	// 		Value value = mainSearch(alpha, beta, searchDepth, rootPly);
+	// 		if (!(value <= alpha && value > alpha_prime) &&//not fail high
+	// 			!(value >= beta && value < beta_prime))//not fail low
+	// 		{
+	// 			return -value;
+	// 		}
+	// 		else
+	// 		{
+	// 			alpha = alpha_prime;
+	// 			beta = beta_prime;
+	// 		}
+	// 	}
+	// }
 
 	//TODO: perform heuristic ordering
 
@@ -291,12 +330,12 @@ Value Engine::mainSearch(
 			if (alpha >= beta)//not in bounds, failed high
 			{
 				back();
-				// if (main_CutNode_RegisterCondition(hBoard,
-				// 	hashExistence, searchDepth, rootPly))
-				// {
-				// 	hashTable->set({board->hash, beta, moves[i],
-				// 		searchDepth, rootPly, HashBoard::CutNode});
-				// }
+				if (main_CutNode_RegisterCondition(hBoard,
+					hashExistence, searchDepth, rootPly))
+				{
+					hashTable->set({board->hash, beta, moves[i],
+						searchDepth, rootPly, HashBoard::CutNode});
+				}
 
 				//impose hard bound, beta is a lower bound. (value is "too good")
 				return -beta;
@@ -312,24 +351,24 @@ Value Engine::mainSearch(
 
 	if (inBounds)//in bounds, successful search
 	{
-		// if (main_PVNode_RegisterCondition(hBoard,
-		// 	hashExistence, searchDepth, rootPly))
-		// {
-		// 	hashTable->set({board->hash, alpha, moves[bestMoveIndex],
-		// 		searchDepth, rootPly, HashBoard::PrincipleVariation});
-		// }
+		if (main_PVNode_RegisterCondition(hBoard,
+			hashExistence, searchDepth, rootPly))
+		{
+			hashTable->set({board->hash, alpha, moves[bestMoveIndex],
+				searchDepth, rootPly, HashBoard::PrincipleVariation});
+		}
 
 		//alpha is an exact result
 		return -alpha;
 	}
 	else//not in bounds, failed low
 	{
-		// if (main_AllNode_RegisterCondition(hBoard,
-		// 	hashExistence, searchDepth, rootPly))
-		// {
-		// 	hashTable->set({board->hash, alpha, moves[0],//no move info on all-nodes
-		// 		searchDepth, rootPly, HashBoard::AllNode});
-		// }
+		if (main_AllNode_RegisterCondition(hBoard,
+			hashExistence, searchDepth, rootPly))
+		{
+			hashTable->set({board->hash, alpha, moves[0],//no move info on all-nodes
+				searchDepth, rootPly, HashBoard::AllNode});
+		}
 
 		//impose hard bound, alpha is an upper bound. (value is "too bad")
 		return -alpha;

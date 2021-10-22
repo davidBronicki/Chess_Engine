@@ -79,7 +79,7 @@ Move Board::buildMoveFromContext(BoardSquare sourceSquare, BoardSquare targetSqu
 		if ((fullBoard[sourceSquare] & Piece::Occupied) == Piece::Pawn)
 		{
 			nextIrreversiblePly = 0;
-			if (static_cast<us>(targetSquare - sourceSquare) / 8 % 2 == 0)//moved two squares
+			if (static_cast<ul>(targetSquare / 8 - sourceSquare / 8) % 2 == 0)//moved two squares
 			{
 				deltaExtraInfo ^= Extra::EnPassantAvailable;
 				deltaExtraInfo ^= sourceSquare % 8;
@@ -118,19 +118,19 @@ Move Board::buildMoveFromContext(BoardSquare sourceSquare, BoardSquare targetSqu
 		return promoMove(Piece::Knight | blacksTurn);
 
 		case Move::WhiteShort:
-		deltaExtraInfo |= extraInfo & (Extra::White_Short | Extra::White_Long);
+		deltaExtraInfo |= extraInfo & Extra::WhiteCastleInfo;//could be done with normal move?
 		return standardMove;
 
 		case Move::BlackShort:
-		deltaExtraInfo |= extraInfo & (Extra::Black_Short | Extra::Black_Long);
+		deltaExtraInfo |= extraInfo & Extra::BlackCastleInfo;
 		return standardMove;
 
 		case Move::WhiteLong:
-		deltaExtraInfo |= extraInfo & (Extra::White_Short | Extra::White_Long);
+		deltaExtraInfo |= extraInfo & Extra::WhiteCastleInfo;
 		return standardMove;
 
 		case Move::BlackLong:
-		deltaExtraInfo |= extraInfo & (Extra::Black_Short | Extra::Black_Long);
+		deltaExtraInfo |= extraInfo & Extra::BlackCastleInfo;
 		return standardMove;
 
 		default:
@@ -163,6 +163,9 @@ void Board::performMove(Move move)
 		{
 			uc enPassantSquare = (0b111000 & move.sourceSquare)
 				| (0b000111 & move.targetSquare);
+
+			hash ^= Board::SquareHashes[enPassantSquare][fullBoard[enPassantSquare]];
+
 			pieceBoards[move.deltaSource] ^= targetBoard | sourceBoard;
 			pieceBoards[move.deltaTarget] ^= indexToBitBoard(enPassantSquare);
 
@@ -172,10 +175,15 @@ void Board::performMove(Move move)
 			fullBoard[move.targetSquare] ^= move.deltaSource;
 			fullBoard[move.sourceSquare] ^= move.deltaSource;
 			fullBoard[enPassantSquare] ^= move.deltaTarget;
+
+			hash ^= Board::SquareHashes[enPassantSquare][fullBoard[enPassantSquare]];
 		}
 		break;
 
 		case Move::BlackShort:
+		hash ^= Board::SquareHashes[61][fullBoard[61]]
+			^ Board::SquareHashes[63][fullBoard[63]];
+
 		pieceBoards[Piece::King | Piece::Black] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::Black] ^= 0b10100000ull << (7 * 8);
 
@@ -185,9 +193,15 @@ void Board::performMove(Move move)
 		fullBoard[move.sourceSquare] ^= Piece::King | Piece::Black;
 		fullBoard[61] ^= Piece::Rook | Piece::Black;
 		fullBoard[63] ^= Piece::Rook | Piece::Black;
+
+		hash ^= Board::SquareHashes[61][fullBoard[61]]
+			^ Board::SquareHashes[63][fullBoard[63]];
 		break;
 
 		case Move::BlackLong:
+		hash ^= Board::SquareHashes[7 * 8 + 3][fullBoard[7 * 8 + 3]]
+			^ Board::SquareHashes[7 * 8][fullBoard[7 * 8]];
+
 		pieceBoards[Piece::King | Piece::Black] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::Black] ^= 0b1001ull << (7 * 8);
 
@@ -197,9 +211,15 @@ void Board::performMove(Move move)
 		fullBoard[move.sourceSquare] ^= Piece::King | Piece::Black;
 		fullBoard[7 * 8 + 3] ^= Piece::Rook | Piece::Black;
 		fullBoard[7 * 8] ^= Piece::Rook | Piece::Black;
+
+		hash ^= Board::SquareHashes[7 * 8 + 3][fullBoard[7 * 8 + 3]]
+			^ Board::SquareHashes[7 * 8][fullBoard[7 * 8]];
 		break;
 
 		case Move::WhiteShort:
+		hash ^= Board::SquareHashes[5][fullBoard[5]]
+			^ Board::SquareHashes[7][fullBoard[7]];
+
 		pieceBoards[Piece::King | Piece::White] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::White] ^= 0b10100000ull;
 
@@ -209,9 +229,15 @@ void Board::performMove(Move move)
 		fullBoard[move.sourceSquare] ^= Piece::King | Piece::White;
 		fullBoard[5] ^= Piece::Rook | Piece::White;
 		fullBoard[7] ^= Piece::Rook | Piece::White;
+
+		hash ^= Board::SquareHashes[5][fullBoard[5]]
+			^ Board::SquareHashes[7][fullBoard[7]];
 		break;
 
 		case Move::WhiteLong:
+		hash ^= Board::SquareHashes[0][fullBoard[0]]
+			^ Board::SquareHashes[3][fullBoard[3]];
+
 		pieceBoards[Piece::King | Piece::White] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::White] ^= 0b1001ull;
 
@@ -221,6 +247,9 @@ void Board::performMove(Move move)
 		fullBoard[move.sourceSquare] ^= Piece::King | Piece::White;
 		fullBoard[3] ^= Piece::Rook | Piece::White;
 		fullBoard[0] ^= Piece::Rook | Piece::White;
+
+		hash ^= Board::SquareHashes[0][fullBoard[0]]
+			^ Board::SquareHashes[3][fullBoard[3]];
 		break;
 
 		default://normal moves and promotions
@@ -286,6 +315,9 @@ void Board::reverseMove(Move move)
 		{
 			uc enPassantSquare = (0b111000 & move.sourceSquare)
 				| (0b000111 & move.targetSquare);
+
+			hash ^= Board::SquareHashes[enPassantSquare][fullBoard[enPassantSquare]];
+			
 			pieceBoards[move.deltaSource] ^= targetBoard | sourceBoard;
 			pieceBoards[move.deltaTarget] ^= indexToBitBoard(enPassantSquare);
 
@@ -295,10 +327,15 @@ void Board::reverseMove(Move move)
 			fullBoard[move.targetSquare] ^= move.deltaSource;
 			fullBoard[move.sourceSquare] ^= move.deltaSource;
 			fullBoard[enPassantSquare] ^= move.deltaTarget;
+
+			hash ^= Board::SquareHashes[enPassantSquare][fullBoard[enPassantSquare]];
 		}
 		break;
 
 		case Move::BlackShort:
+		hash ^= Board::SquareHashes[61][fullBoard[61]]
+			^ Board::SquareHashes[63][fullBoard[63]];
+
 		pieceBoards[Piece::King | Piece::Black] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::Black] ^= 0b10100000ull << (7 * 8);
 
@@ -308,9 +345,15 @@ void Board::reverseMove(Move move)
 		fullBoard[move.sourceSquare] ^= Piece::King | Piece::Black;
 		fullBoard[61] ^= Piece::Rook | Piece::Black;
 		fullBoard[63] ^= Piece::Rook | Piece::Black;
+
+		hash ^= Board::SquareHashes[61][fullBoard[61]]
+			^ Board::SquareHashes[63][fullBoard[63]];
 		break;
 
 		case Move::BlackLong:
+		hash ^= Board::SquareHashes[7 * 8 + 3][fullBoard[7 * 8 + 3]]
+			^ Board::SquareHashes[7 * 8][fullBoard[7 * 8]];
+
 		pieceBoards[Piece::King | Piece::Black] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::Black] ^= 0b1001ull << (7 * 8);
 
@@ -320,9 +363,15 @@ void Board::reverseMove(Move move)
 		fullBoard[move.sourceSquare] ^= Piece::King | Piece::Black;
 		fullBoard[7 * 8 + 3] ^= Piece::Rook | Piece::Black;
 		fullBoard[7 * 8] ^= Piece::Rook | Piece::Black;
+
+		hash ^= Board::SquareHashes[7 * 8 + 3][fullBoard[7 * 8 + 3]]
+			^ Board::SquareHashes[7 * 8][fullBoard[7 * 8]];
 		break;
 
 		case Move::WhiteShort:
+		hash ^= Board::SquareHashes[5][fullBoard[5]]
+			^ Board::SquareHashes[7][fullBoard[7]];
+
 		pieceBoards[Piece::King | Piece::White] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::White] ^= 0b10100000ull;
 
@@ -332,9 +381,15 @@ void Board::reverseMove(Move move)
 		fullBoard[move.sourceSquare] ^= Piece::King | Piece::White;
 		fullBoard[5] ^= Piece::Rook | Piece::White;
 		fullBoard[7] ^= Piece::Rook | Piece::White;
+
+		hash ^= Board::SquareHashes[5][fullBoard[5]]
+			^ Board::SquareHashes[7][fullBoard[7]];
 		break;
 
 		case Move::WhiteLong:
+		hash ^= Board::SquareHashes[0][fullBoard[0]]
+			^ Board::SquareHashes[3][fullBoard[3]];
+
 		pieceBoards[Piece::King | Piece::White] ^= targetBoard | sourceBoard;
 		pieceBoards[Piece::Rook | Piece::White] ^= 0b1001ull;
 
@@ -344,6 +399,9 @@ void Board::reverseMove(Move move)
 		fullBoard[move.sourceSquare] ^= Piece::King | Piece::White;
 		fullBoard[3] ^= Piece::Rook | Piece::White;
 		fullBoard[0] ^= Piece::Rook | Piece::White;
+
+		hash ^= Board::SquareHashes[0][fullBoard[0]]
+			^ Board::SquareHashes[3][fullBoard[3]];
 		break;
 
 		default://normal moves and promotions
@@ -592,22 +650,32 @@ void Board::addKingMoves(std::vector<Move>& currentMoves) const
 	{
 		if (blacksTurn)
 		{
-			if (extraInfo & Extra::Black_Long)
+			if (extraInfo & Extra::Black_Long &&
+				fullBoard[7 * 8 + 1] == 0 &&
+				fullBoard[7 * 8 + 2] == 0 &&
+				fullBoard[7 * 8 + 3] == 0)
 			{
 				currentMoves.push_back(buildMoveFromContext(7 * 8 + 4, 7 * 8 + 2, Move::BlackLong));
 			}
-			if (extraInfo & Extra::Black_Short)
+			if (extraInfo & Extra::Black_Short &&
+				fullBoard[7 * 8 + 5] == 0 &&
+				fullBoard[7 * 8 + 6] == 0)
 			{
 				currentMoves.push_back(buildMoveFromContext(7 * 8 + 4, 7 * 8 + 6, Move::BlackShort));
 			}
 		}
 		else
 		{
-			if (extraInfo & Extra::White_Long)
+			if (extraInfo & Extra::White_Long &&
+				fullBoard[1] == 0 &&
+				fullBoard[2] == 0 &&
+				fullBoard[3] == 0)
 			{
 				currentMoves.push_back(buildMoveFromContext(4, 2, Move::WhiteLong));
 			}
-			if (extraInfo & Extra::White_Short)
+			if (extraInfo & Extra::White_Short &&
+				fullBoard[5] == 0 &&
+				fullBoard[6] == 0)
 			{
 				currentMoves.push_back(buildMoveFromContext(4, 6, Move::WhiteShort));
 			}

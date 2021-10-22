@@ -37,7 +37,7 @@ bool Engine::threeMoveRepetition()
 	//TODO: check off-by-one issues
 	int count = 0;
 	for (int i = 0; i < std::min(context->activeHashes.size(),
-		static_cast<size_t>(board->plySinceLastPawnOrCapture)); i += 2)
+		static_cast<size_t>(board->plySinceLastPawnOrCapture + 1)); i += 2)
 	{
 		if (context->activeHashes[context->activeHashes.size() - 1 - i] == context->activeHashes.back())
 			++count;

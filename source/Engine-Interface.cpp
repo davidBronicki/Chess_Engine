@@ -265,7 +265,7 @@ void Engine::handleString(string inputLine)
 			//en passant square
 			if (item != "-")
 			{
-				board->extraInfo |= (algebraicToIndex(item) & Extra::EnPassantFile)
+				board->extraInfo |= stol(item)
 					| Extra::EnPassantAvailable;
 			}
 
@@ -275,7 +275,7 @@ void Engine::handleString(string inputLine)
 		{
 			//fifty move rule number (in half moves)
 
-			board->plySinceLastPawnOrCapture = stoll(item);
+			board->plySinceLastPawnOrCapture = stol(item);
 
 			state = "fen 6";
 		}
@@ -283,7 +283,9 @@ void Engine::handleString(string inputLine)
 		{
 			//move number
 
-			board->plyNumber = stoll(item) * 2 + board->blacksTurn - 2;
+			board->plyNumber = stol(item) * 2 + board->blacksTurn - 2;
+
+			board->resetHash();
 
 			state = "check for moves";
 		}
