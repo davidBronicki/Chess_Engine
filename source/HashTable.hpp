@@ -34,10 +34,18 @@ class HashTable
 	
 	enum HashOccupancyType : uc
 	{
-		HashNotPresent = 0,
-		HashesNotEqual = 1,
-		HashesEqual = 2
+		HashNotPresent,
+		HashesNotEqual,
+		HashesEqual
 	};
+
+	// enum WindowType : uc
+	// {
+	// 	FullWindow,
+	// 	ReducedWindow,
+	// 	AsperationWindow,
+	// 	NullWindow
+	// };
 	
 	HashTable(size_t tableSize)
 	:
@@ -58,12 +66,14 @@ class HashTable
 		slot = board;
 	}
 
-	HashBoard const& main_HandleHash(HashType const& hash,
-		HashOccupancyType& existence, Value& alpha, Value& beta,
+	HashOccupancyType getExistence(HashBoard const& hBoard, HashType hash);
+
+	bool main_HashWindowSetup(
+		HashBoard const& hBoard, Value& alpha, Value& beta,
 		std::vector<Move>& moves, PlyType searchDepth, PlyType rootPly) const;
 
-	HashBoard const& quiescence_HandleHash(HashType const& hash,
-		HashOccupancyType& existence, Value& alpha, Value& beta,
+	void quiescence_HandleHash(
+		HashBoard const& hBoard, Value& alpha, Value& beta,
 		std::vector<Move>& moves, PlyType searchDepth, PlyType rootPly) const;
 
 	size_t getSize() const {return size;}

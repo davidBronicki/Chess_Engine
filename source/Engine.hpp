@@ -65,6 +65,10 @@ class Engine
 	Value mainSearch(
 		Value alpha, Value beta, PlyType searchDepth, PlyType rootPly);
 
+	uc windowMainSearch(
+		int& bestIndex, std::vector<Move> const& moves,
+		Value& alpha, Value beta, PlyType searchDepth, PlyType rootPly);
+
 	std::vector<std::tuple<Value, Move>> rootSearch(PlyType searchDepth);
 
 	public:
