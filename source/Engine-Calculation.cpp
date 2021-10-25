@@ -3,7 +3,7 @@
 #include "EvaluationContext.hpp"
 #include "HashTable.hpp"
 
-// #include "EngineState.hpp"
+#include "Evaluation.hpp"
 
 #include <math.h>
 #include <algorithm>
@@ -17,34 +17,6 @@ inline HashTable::HashOccupancyType getExistence(HashBoard const& hBoard, HashTy
 	if (hBoard.hash == 0) return HashTable::HashNotPresent;
 	if (hBoard.hash == hash) return HashTable::HashesEqual;
 	return HashTable::HashesNotEqual;
-}
-
-inline Value staleEval(Board const& board) // no moves possible, draw or death
-{
-	if (board.inCheck())
-	{
-		return Value(0, -board.plyNumber);
-	}
-	return Value();
-}
-
-Value evaluate(Board const& board)
-{
-	Value value;
-	value.materialValue += 1000 * cardinality(board.pieceBoards[Piece::Pawn | Piece::White]);
-	value.materialValue += 3000 * cardinality(board.pieceBoards[Piece::Knight | Piece::White]);
-	value.materialValue += 3000 * cardinality(board.pieceBoards[Piece::Bishop | Piece::White]);
-	value.materialValue += 5000 * cardinality(board.pieceBoards[Piece::Rook | Piece::White]);
-	value.materialValue += 9000 * cardinality(board.pieceBoards[Piece::Queen | Piece::White]);
-
-	value.materialValue -= 1000 * cardinality(board.pieceBoards[Piece::Pawn | Piece::Black]);
-	value.materialValue -= 3000 * cardinality(board.pieceBoards[Piece::Knight | Piece::Black]);
-	value.materialValue -= 3000 * cardinality(board.pieceBoards[Piece::Bishop | Piece::Black]);
-	value.materialValue -= 5000 * cardinality(board.pieceBoards[Piece::Rook | Piece::Black]);
-	value.materialValue -= 9000 * cardinality(board.pieceBoards[Piece::Queen | Piece::Black]);
-
-	value.materialValue += 500;
-	return board.blacksTurn ? -value : value;
 }
 
 inline bool quiescence_CutNode_RegisterCondition(
@@ -162,7 +134,15 @@ uc Engine::windowQuiescenceSearch(
 	bool inBounds = false; // if still false at end then we have failed-low
 	for (int i = 0; i < moves.size(); ++i)
 	{
-		bool isQuiescent = board->isQuiescent(moves[i]);
+		bool isQuiescent;
+		if (searchDepth <= 0)
+		{
+			isQuiescent = board->isQuiescent_weak(moves[i]);
+		}
+		else
+		{
+			isQuiescent = board->isQuiescent_strong(moves[i]);
+		}
 		if (!advance(moves[i])) // not legal move
 			continue;
 		legalMoveExists = true;
@@ -173,8 +153,19 @@ uc Engine::windowQuiescenceSearch(
 		}
 		nonQuiescentMoveExists = true;
 
+		//TODO: delta pruning and static capture analysis
+
+		if (abs(captureDelta(*board, moves[i])) + 2000 < alpha)
+		{
+			//delta pruning: if a capture does not improve matters
+			//by more that two pawns then its probably not
+			//worth exploring.
+			back();
+			continue;
+		}
+
 		Value value{quiescenceSearch(
-			-beta, -alpha, searchDepth - 1, rootPly)};
+			-beta, -alpha, max(searchDepth - 1, 0), rootPly)};
 
 		if (value > alpha)
 		{
@@ -249,12 +240,18 @@ Value Engine::quiescenceSearch(
 		return Value();
 	}
 
-	if (searchDepth <= 0)
-	{
-		return -evaluate(*board);
-	}
+	// if (searchDepth <= 0)
+	// {
+	// 	return -evaluate(*board);
+	// }
 
-	if (!board->inCheck()) // can't choose a different move when in check
+	// if (searchDepth > 0 && advance(board->buildNullMove())) // can't choose a different move when in check
+	// {
+	// 	alpha = max(alpha, quiescenceSearch(alpha, beta, searchDepth - 1, rootPly));
+	// 	back();
+	// }
+
+	if (!board->inCheck())
 	{
 		alpha = max(alpha, evaluate(*board));
 	}

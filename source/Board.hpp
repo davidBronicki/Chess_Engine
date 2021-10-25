@@ -54,6 +54,8 @@ struct Board
 
 	Move buildMoveFromContext(uc sourceSquare, uc targetSquare, Move::Type moveType) const;
 
+	Move buildNullMove() const;
+
 	std::vector<Move> generateMoves() const;
 
 	// bool moveIsLegal(Move move) const;
@@ -61,7 +63,11 @@ struct Board
 	bool miscLegalityCheck(Move move) const;
 	bool positionAttacked(int pos, bool byBlack) const;
 
-	bool isQuiescent(Move move) const;
+	//includes checks
+	bool isQuiescent_strong(Move move) const;
+
+	//only captures, promotions(, and escaping checks?)
+	bool isQuiescent_weak(Move move) const;
 
 	void addPawnMoves(std::vector<Move>& currentMoves) const;
 	void addKnightMoves(std::vector<Move>& currentMoves) const;

@@ -191,8 +191,16 @@ void Engine::getPVLine(std::vector<Move>& movesThusFar)
 				getPVLine(movesThusFar);
 			}
 		}
+		board->reverseMove(move);
 	}
-	board->reverseMove(move);
+	else
+	{
+		board->reverseMove(move);
+		if (hashTable->get(board->hash).value.matePlyNumber != 0)
+		{
+			movesThusFar.pop_back();
+		}
+	}
 }
 
 std::vector<Move> Engine::getPVLine(Move move)

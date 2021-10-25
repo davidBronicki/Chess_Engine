@@ -139,6 +139,11 @@ Move Board::buildMoveFromContext(BoardSquare sourceSquare, BoardSquare targetSqu
 	}
 }
 
+Move Board::buildNullMove() const
+{
+	return buildMoveFromContext(0, 0, Move::NullMove);
+}
+
 void Board::performMove(Move move)
 {
 	hash ^= Board::ExtraHashes[extraInfo]

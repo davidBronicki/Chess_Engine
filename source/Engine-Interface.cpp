@@ -433,17 +433,17 @@ void Engine::updateUI()
 	}
 	else
 	{
-		if (pv_data.value.materialValue > 0)
+		if (pv_data.value.matePlyNumber > 0)
 		{
 			int plyToMate = pv_data.value.matePlyNumber - board->plyNumber;
 			cout << " score mate ";
-			cout << (plyToMate / 2);
+			cout << (plyToMate / 2 + 1);
 		}
 		else
 		{
 			int plyToMate = pv_data.value.matePlyNumber + board->plyNumber;
 			cout << " score mate ";
-			cout << (plyToMate / 2 - 1);
+			cout << (plyToMate / 2);
 		}
 	}
 

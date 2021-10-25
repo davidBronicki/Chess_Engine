@@ -4,6 +4,8 @@
 #include "EvaluationContext.hpp"
 #include "Board.hpp"
 
+#include "Evaluation.hpp"
+
 #include <thread>
 
 using namespace std;
@@ -13,6 +15,8 @@ bool Engine::globalsReady = false;
 void Engine::initializeGlobals()
 {
 	Board::initializeGlobals();
+
+	evaluationInitialize();
 }
 
 Engine::Engine()

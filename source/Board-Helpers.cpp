@@ -77,7 +77,15 @@ bool Board::positionAttacked(int pos, bool byBlack) const
 	return false;
 }
 
-bool Board::isQuiescent(Move move) const
+bool Board::isQuiescent_weak(Move move) const
+{
+	if (move.deltaTarget != fullBoard[move.sourceSquare])
+		return false;//finds captures and promotions
+	if (inCheck()) return false;//escaping check isn't (even weakly) quiescent
+	return true;
+}
+
+bool Board::isQuiescent_strong(Move move) const
 {
 	if (move.deltaTarget != fullBoard[move.sourceSquare])
 		return false;//finds captures and promotions
