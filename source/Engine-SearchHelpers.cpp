@@ -5,6 +5,7 @@
 #include "HashTable.hpp"
 
 #include <math.h>
+// #include <algorithm>//clamp function
 
 bool Engine::good()
 {
@@ -45,30 +46,12 @@ bool Engine::threeMoveRepetition()
 	return count >= 3;
 }
 
-Value Engine::hashEval(Move move)
-{
-	board->performMove(move);
-	HashBoard const& hBoard{hashTable->get(board->hash)};
-	HashType hash = board->hash;
-	board->reverseMove(move);
-
-	if (hash != hBoard.hash) return Value{0, -board->plyNumber};
-	return -hBoard.value;
-}
-
-HashTable::HashOccupancyType HashTable::getExistence(HashBoard const& hBoard, HashType hash)
-{
-	if (hBoard.hash == 0) return HashNotPresent;
-	if (hBoard.hash == hash) return HashesEqual;
-	return HashesNotEqual;
-}
 
 bool HashTable::main_HashWindowSetup(
 	HashBoard const& hBoard, Value& alpha, Value& beta,
 	std::vector<Move>& moves, PlyType searchDepth, PlyType rootPly) const
 {
 	bool located = false;//gaurds against type I hash collisions
-	if ((hBoard.nodeType & HashBoard::TypeInfo_Mask) != HashBoard::AllNode)
 	for (int i = 0; i < moves.size(); ++i)
 	{
 		if (moves[i] == hBoard.bestResponse)
@@ -89,18 +72,16 @@ bool HashTable::main_HashWindowSetup(
 	//then we can trust the result
 	switch (hBoard.nodeType)
 	{
-		case HashBoard::PrincipleVariation://roughly good value
-		alpha = std::max(alpha, hBoard.value.worse(trustWindow));
-		beta = std::min(beta, hBoard.value.better(trustWindow));
+		case HashBoard::PrincipleVariation://good value
+		alpha = std::clamp(hBoard.value.worse(trustWindow), alpha, beta);
+		beta = std::clamp(hBoard.value.better(trustWindow), alpha, beta);
 
-		case HashBoard::AllNode://rough upper bound value
-		beta = std::max(std::min(beta,
-			hBoard.value.better(trustWindow)), alpha.better(trustWindow));
+		case HashBoard::AllNode://upper bound value
+		beta = std::clamp(hBoard.value.better(trustWindow), alpha.better(trustWindow), beta);
 		break;
 
-		case HashBoard::CutNode://rough lower bound value
-		alpha = std::min(std::max(
-			alpha, hBoard.value.worse(trustWindow)), beta.worse(trustWindow));
+		case HashBoard::CutNode://lower bound value
+		alpha = std::clamp(hBoard.value.worse(trustWindow), alpha, beta.worse(trustWindow));
 		break;
 
 		default://Can't trust quiescence searches durring non-quiescence search
@@ -109,75 +90,114 @@ bool HashTable::main_HashWindowSetup(
 	return true;
 }
 
-void HashTable::quiescence_HandleHash(
+bool HashTable::quiescence_HashWindowSetup(
 	HashBoard const& hBoard, Value& alpha, Value& beta,
 	std::vector<Move>& moves, PlyType searchDepth, PlyType rootPly) const
 {
-	// return HashTable::FullWindow;
-	// HashBoard const& hBoard = get(hash);
-	// if (hBoard.hash == 0)
-	// {
-	// 	existence = HashTable::HashNotPresent;
-	// }
-	// else if (hBoard.hash == hash)
-	// {
-	// 	existence = HashTable::HashesEqual;
-	// 	//if searched to equal or better depth
-	// 	//then we can trust the result
-	// 	if (hBoard.searchDepth >= searchDepth ||//deeper quiescent search
-	// 		!(hBoard.nodeType & HashBoard::Quiescence_Mask))//non-quiescent search (always equal or better search)
-	// 	{
-	// 		switch (hBoard.nodeType & HashBoard::TypeInfo_Mask)//we don't care if its quiescent or not
-	// 		{
-	// 			case HashBoard::PrincipleVariation://exact value, clamp?
-	// 			alpha = hBoard.value;
-	// 			beta = hBoard.value;
+	bool located = false;//gaurds against type I hash collisions
+	for (int i = 0; i < moves.size(); ++i)
+	{
+		if (moves[i] == hBoard.bestResponse)
+		{
+			std::swap(moves[0], moves[i]);
+			located = true;
+			break;
+		}
+	}
+	if (!located) return false;
 
-	// 			case HashBoard::AllNode://upper bound value
-	// 			if (hBoard.value <= alpha)
-	// 			{
-	// 				beta = alpha;
-	// 				return hBoard;
-	// 			}
-	// 			else
-	// 			{
-	// 				beta = hBoard.value;
-	// 				searchDepth = hBoard.searchDepth;//allows the result to be equally trustworthy
-	// 			}
-	// 			break;
+	if (isNullWindow(alpha, beta)) return false;
+	
+	// long trustWindow = !(hBoard.nodeType & HashBoard::Quiescence_Mask) ?
+	// 	0 :
+	// 	hBoard.searchDepth == searchDepth ?
+	// 		1 ://super trusted, use a null window
+	// 		500;//somewhat trusted, use an asperation window
 
-	// 			case HashBoard::CutNode://lower bound value
-	// 			if (hBoard.value >= beta)
-	// 			{
-	// 				alpha = beta;
-	// 				return hBoard;
-	// 			}
-	// 			else
-	// 			{
-	// 				alpha = hBoard.value;
-	// 				searchDepth = hBoard.searchDepth;//allows the result to be equally trustworthy
-	// 			}
-	// 			break;
+	long trustWindow = hBoard.searchDepth == searchDepth ?
+		1 ://super trusted, use a null window
+		500;//somewhat trusted, use an asperation window
 
-	// 			default://will never be reached
-	// 			break;
-	// 		}
-	// 	}
+	//if searched to equal or better depth
+	//then we can trust the result
+	switch (hBoard.nodeType)
+	{
+		case HashBoard::PrincipleVariation://good value
+		alpha = std::clamp(hBoard.value, alpha, beta);
+		beta = alpha;
+		break;
 
-	// 	//if we have an all-node then there is no ordering knowledge to be gained
-	// 	if ((hBoard.nodeType & HashBoard::TypeInfo_Mask) != HashBoard::AllNode)
-	// 	for (int i = 0; i < moves.size(); ++i)
-	// 	{
-	// 		if (moves[i] == hBoard.bestResponse)
-	// 		{
-	// 			std::swap(moves[0], moves[i]);
-	// 			break;
-	// 		}
-	// 	}
-	// }
-	// else
-	// {
-	// 	existence = HashTable::HashesNotEqual;
-	// }
-	// return hBoard;
+		case HashBoard::AllNode://upper bound value
+		beta = std::clamp(hBoard.value, alpha, beta);
+		break;
+
+		case HashBoard::CutNode://lower bound value
+		alpha = std::clamp(hBoard.value, alpha, beta);
+		break;
+
+		case HashBoard::Quiescence_PV:
+		alpha = std::clamp(hBoard.value.worse(trustWindow), alpha, beta.worse(1));
+		beta = std::clamp(hBoard.value.better(trustWindow), alpha.better(1), beta);
+		break;
+
+		case HashBoard::Quiescence_All:
+		beta = std::clamp(hBoard.value.better(trustWindow), alpha.better(1), beta);
+		break;
+
+		case HashBoard::Quiescence_Cut:
+		alpha = std::clamp(hBoard.value.worse(trustWindow), alpha, beta.worse(1));
+		break;
+
+		default://no remaining cases, this stops a warning message
+		break;
+	}
+	return !(hBoard.nodeType & HashBoard::Quiescence_Mask);
+}
+
+void Engine::getPVLine(std::vector<Move>& movesThusFar)
+{
+	//can encounter null moves for an unknown reason
+	//happen to reach hash with 24 0 bits?
+	//generate moves and check that best is in there
+	//to circumvent this
+
+	//if repeated moves are performed but not searched
+	//deep enough to break repetition then
+	//it is possible to get stuck in a loop.
+	//compare moves found to HashBoard.searchDepth to circumvent.
+
+	Move move{movesThusFar.back()};
+
+	board->performMove(move);
+
+	HashBoard const& hBoard{hashTable->get(board->hash)};
+	if (hBoard.hash == board->hash)
+	{
+		if (movesThusFar.size() + hBoard.searchDepth <= context->searchDepth)
+		{
+			std::vector<Move> availableMoves{board->generateMoves()};
+			bool moveExists = false;
+			for (auto&& pseudoLegalMove : availableMoves)
+			{
+				if (pseudoLegalMove == hBoard.bestResponse)
+				{
+					moveExists = true;
+					break;
+				}
+			}
+			if (moveExists)
+			{
+				movesThusFar.push_back(hBoard.bestResponse);
+				getPVLine(movesThusFar);
+			}
+		}
+	}
+	board->reverseMove(move);
+}
+
+std::vector<Move> Engine::getPVLine(Move move)
+{
+	std::vector<Move> output{move};
+	getPVLine(output);
+	return output;
 }

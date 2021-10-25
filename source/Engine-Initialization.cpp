@@ -112,7 +112,8 @@ EvaluationContext::EvaluationContext()
 	debugFlag(false),
 	keepNStacks(1),
 	depthWalkValue(1),
-	quiescenceSearchDepth(4)
+	quiescenceSearchDepth(6),
+	searchDepth(5)
 {
 	resetGoFlags();
 }

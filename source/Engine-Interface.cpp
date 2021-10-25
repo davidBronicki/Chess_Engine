@@ -3,6 +3,7 @@
 
 #include "EvaluationContext.hpp"
 #include "Board.hpp"
+#include "HashTable.hpp"
 
 using namespace std;
 
@@ -182,7 +183,7 @@ void Engine::handleString(string inputLine)
 			else if (item == "go")
 			{
 				context->resetGoFlags();
-				context->bestMoveStacks.resize(0);
+				// context->bestMoveStacks.resize(0);
 				context->goFlag = true;
 				state = "go";
 			}
@@ -409,5 +410,76 @@ void Engine::handleString(string inputLine)
 		{
 			//TODO
 		}
+	}
+}
+
+void Engine::updateUI()
+{
+	UpdateableData<PV_Data>& best = context->pvLines[0];
+	if (!best.changed())
+	{
+		return;
+	}
+	PV_Data const& pv_data = best.get();
+	cout << "info depth ";
+	cout << pv_data.specificDepth;
+	cout << " seldepth ";
+	cout << pv_data.specificSelectiveDepth;
+	// cout << " multipv 1 ";
+	if (pv_data.value.matePlyNumber == 0)
+	{
+		cout << " score cp ";
+		cout << (pv_data.value.materialValue / 10);
+	}
+	else
+	{
+		if (pv_data.value.materialValue > 0)
+		{
+			int plyToMate = pv_data.value.matePlyNumber - board->plyNumber;
+			cout << " score mate ";
+			cout << (plyToMate / 2);
+		}
+		else
+		{
+			int plyToMate = pv_data.value.matePlyNumber + board->plyNumber;
+			cout << " score mate ";
+			cout << (plyToMate / 2 - 1);
+		}
+	}
+
+	cout << " nodes ";
+	cout << context->nodesReached;
+	if (context->timeSpent != 0)
+	{
+		cout << " nps ";
+		cout << (context->nodesReached * 1000 / context->timeSpent);
+	}
+	cout << " hashfull ";
+	cout << (hashTable->getOccupancy() * 1000 / hashTable->getSize());
+	// cout << " tbhits ";//table base hits
+	cout << " time ";
+	cout << context->timeSpent;
+	cout << " pv ";
+
+	cout << moveToAlgebraic(pv_data.moves[0]);
+	for (int i = 1; i < pv_data.moves.size(); ++i)
+	{
+		cout << " ";
+		cout << moveToAlgebraic(pv_data.moves[i]);
+	}
+	cout << endl;
+}
+
+void Engine::returnResult()
+{
+	UpdateableData<PV_Data>& best = context->pvLines[0];
+	PV_Data const& pv_data = best.get();
+	if (pv_data.moves.size() > 0)
+	{
+		cout << "bestmove " << moveToAlgebraic(pv_data.moves[0]) << endl;
+	}
+	else
+	{
+		cout << "bestmove " << "0000" << endl;
 	}
 }

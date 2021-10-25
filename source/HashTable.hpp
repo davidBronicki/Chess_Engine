@@ -66,13 +66,11 @@ class HashTable
 		slot = board;
 	}
 
-	HashOccupancyType getExistence(HashBoard const& hBoard, HashType hash);
-
 	bool main_HashWindowSetup(
 		HashBoard const& hBoard, Value& alpha, Value& beta,
 		std::vector<Move>& moves, PlyType searchDepth, PlyType rootPly) const;
 
-	void quiescence_HandleHash(
+	bool quiescence_HashWindowSetup(
 		HashBoard const& hBoard, Value& alpha, Value& beta,
 		std::vector<Move>& moves, PlyType searchDepth, PlyType rootPly) const;
 

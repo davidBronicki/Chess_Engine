@@ -17,7 +17,7 @@
 #define genSlideMoves_ForwardScanning(slideBoards)\
 	{\
 		BitBoard moveScan = slideBoards[i];\
-		int firstHit = firstIndex(boardIntersect(moveScan, pieceBoards[Piece::IndexAll]));\
+		int firstHit = firstIndex(boardIntersect(moveScan, pieceBoards[Piece::All]));\
 		BitBoard moveScanFromHit = firstHit == 64 ? 0ull : slideBoards[firstHit];\
 		BitBoard selfCaptureBoard = boardIntersect(indexToBitBoard(firstHit), pieceBoards[blacksTurn]);\
 		BitBoard availableMovesBoard = moveScan ^ moveScanFromHit ^ selfCaptureBoard;\
@@ -30,7 +30,7 @@
 #define genSlideMoves_BackwardScanning(slideBoards)\
 	{\
 		BitBoard moveScan = slideBoards[i];\
-		int firstHit = lastIndex(boardIntersect(moveScan, pieceBoards[Piece::IndexAll]));\
+		int firstHit = lastIndex(boardIntersect(moveScan, pieceBoards[Piece::All]));\
 		BitBoard moveScanFromHit = firstHit == 64 ? 0ull : slideBoards[firstHit];\
 		BitBoard selfCaptureBoard = boardIntersect(indexToBitBoard(firstHit), pieceBoards[blacksTurn]);\
 		BitBoard availableMovesBoard = moveScan ^ moveScanFromHit ^ selfCaptureBoard;\
@@ -450,7 +450,7 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 	if (blacksTurn)
 	{
 		BitBoard pawns = pieceBoards[Piece::Pawn | Piece::Black];
-		BitBoard pushable = boardIntersect(pawns, shiftUp(pieceBoards[Piece::IndexNone], 1));
+		BitBoard pushable = boardIntersect(pawns, shiftUp(pieceBoards[Piece::None], 1));
 		BitBoard rightCaptureReady = boardIntersect(
 			pawns, shiftLeft(shiftUp(pieceBoards[Piece::White], 1), 1));
 		BitBoard leftCaptureReady = boardIntersect(
@@ -516,7 +516,7 @@ void Board::addPawnMoves(std::vector<Move>& currentMoves) const
 	else
 	{
 		BitBoard pawns = pieceBoards[Piece::Pawn | Piece::White];
-		BitBoard pushable = boardIntersect(pawns, shiftDown(pieceBoards[Piece::IndexNone], 1));
+		BitBoard pushable = boardIntersect(pawns, shiftDown(pieceBoards[Piece::None], 1));
 		BitBoard rightCaptureReady = boardIntersect(
 			pawns, shiftLeft(shiftDown(pieceBoards[Piece::Black], 1), 1));
 		BitBoard leftCaptureReady = boardIntersect(

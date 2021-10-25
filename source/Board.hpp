@@ -76,8 +76,8 @@ struct Board
 
 inline void resetFullOccupancy(BitBoard* bitBoards)
 {
-	bitBoards[Piece::IndexAll] = bitBoards[Piece::White] | bitBoards[Piece::Black];
-	bitBoards[Piece::IndexNone] = ~bitBoards[Piece::IndexAll];
+	bitBoards[Piece::All] = bitBoards[Piece::White] | bitBoards[Piece::Black];
+	bitBoards[Piece::None] = ~bitBoards[Piece::All];
 }
 
 Move constructMove(Board const& board, uc sourceSquare, uc targetSquare);

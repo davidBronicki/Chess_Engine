@@ -53,17 +53,26 @@ class Engine
 	void initPos(std::string positionString);
 	Move buildMoveFromFragments(BoardSquare startIndex, BoardSquare endIndex, char promotion);
 
+	void updateUI();
+	void returnResult();
+
 	bool threeMoveRepetition();
 	bool advance(Move move);
 	// uc nonQuiescentAdvance(Move move);
 	void back();
-	Value hashEval(Move move);
+	// Value hashEval(Move move);
+	void getPVLine(std::vector<Move>& movesThusFar);
+	std::vector<Move> getPVLine(Move move);
 
 	Value quiescenceSearch(
 		Value alpha, Value beta, PlyType searchDepth, PlyType rootPly);
 
 	Value mainSearch(
 		Value alpha, Value beta, PlyType searchDepth, PlyType rootPly);
+
+	uc windowQuiescenceSearch(
+		int& bestIndex, std::vector<Move> const& moves,
+		Value& alpha, Value beta, PlyType searchDepth, PlyType rootPly);
 
 	uc windowMainSearch(
 		int& bestIndex, std::vector<Move> const& moves,

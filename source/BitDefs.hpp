@@ -28,8 +28,8 @@ struct Piece
 	Sliding	 =	0b1000,//mask to check if slidy
 	Occupied =	0b1110,//mask to see if square is occupied
 
-	IndexAll =	0b1000,//index labelling the "all pieces" bit board
-	IndexNone=	0b1001};//index labelling the "no pieces" bit board
+	All =	0b1000,//index labelling the "all pieces" bit board
+	None=	0b1001};//index labelling the "no pieces" bit board
 };
 
 struct Extra

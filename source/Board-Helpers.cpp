@@ -29,18 +29,19 @@ bool Board::positionAttacked(int pos, bool byBlack) const
 	if (boardIntersect(KnightMoves[pos],
 		pieceBoards[Piece::Knight | byBlack]) != 0ull) return true;
 	
-	for (int i = 0; i < 8; ++i)
+	for (int i = 0; i < 8; ++i)//each of the slide directions
 	{
 		int hitIndex = i < 4 ?
 			firstIndex(boardIntersect(
 				SlideMoves[i][pos],
-				pieceBoards[Piece::IndexAll]
+				pieceBoards[Piece::All]
 			)) :
 			lastIndex(boardIntersect(
 				SlideMoves[i][pos],
-				pieceBoards[Piece::IndexAll]
+				pieceBoards[Piece::All]
 			));
-		if (boardIntersect(indexToBitBoard(hitIndex), pieceBoards[byBlack]))
+		if (hitIndex == 64) continue;
+		if ((fullBoard[hitIndex] & Piece::Team) == byBlack)
 		{
 			if (i % 2) //rook move
 			{
@@ -81,35 +82,91 @@ bool Board::isQuiescent(Move move) const
 	if (move.deltaTarget != fullBoard[move.sourceSquare])
 		return false;//finds captures and promotions
 	if (inCheck()) return false;//escaping check isn't quiescent
-	us enemyKingPos = firstIndex(pieceBoards[Piece::King | !blacksTurn]);
-	uc moveDirection = RelativeDirection[move.targetSquare][enemyKingPos];
-	if ((move.deltaTarget & Piece::Bishop) == Piece::Bishop &&//bishop-type piece moved
-		moveDirection % 2 == 1)//onto a diagonal with the enemy king
+	if (move.moveType == Move::Normal || move.moveType == Move::EnPassant)
 	{
-		if (moveDirection < 4)//requires forward scan
+		//promotions have already been handled,
+		//null moves are checked differently,
+		//and castling is inherently quiescent.
+		//these are the only possible non-quiescent moves left.
+
+		//need to check if the piece is checking and
+		//if the move reveals a check
+		us enemyKingPos = firstIndex(pieceBoards[Piece::King | !blacksTurn]);
+
+		//for checking if the piece checks the king
+		uc targetMoveDirection = RelativeDirection[move.targetSquare][enemyKingPos];
+
+		//for checking for revealed check
+		uc sourceMoveDirection = RelativeDirection[enemyKingPos][move.sourceSquare];
+		if ((move.deltaSource & Piece::Sliding))
 		{
-			if (firstIndex(boardIntersect(SlideMoves[moveDirection][move.targetSquare], pieceBoards[Piece::IndexAll]))
-				== enemyKingPos) return false;//checking the enemy king isn't quiescent
+			//rook bishop and queen attacks
+			if (targetMoveDirection < Move::Knight &&
+				((move.deltaSource & Piece::Bishop) == Piece::Bishop &&
+					targetMoveDirection % 2 == 0 ||
+				(move.deltaSource & Piece::Rook) == Piece::Rook &&
+					targetMoveDirection % 2 == 1))
+			{
+				if (targetMoveDirection < 4)//requires forward scan
+				{
+					if (firstIndex(boardIntersect(SlideMoves[targetMoveDirection][move.targetSquare], pieceBoards[Piece::All]))
+						== enemyKingPos) return false;//checking the enemy king isn't quiescent
+				}
+				else//requires backward scan
+				{
+					if (lastIndex(boardIntersect(SlideMoves[targetMoveDirection][move.targetSquare], pieceBoards[Piece::All]))
+						== enemyKingPos) return false;//checking the enemy king isn't quiescent
+				}
+			}
 		}
-		else//requires backward scan
+		else
 		{
-			if (lastIndex(boardIntersect(SlideMoves[moveDirection][move.targetSquare], pieceBoards[Piece::IndexAll]))
-				== enemyKingPos) return false;//checking the enemy king isn't quiescent
+			//pawn, knight, and king attacks
+			if (targetMoveDirection == Move::Knight &&
+				(move.deltaSource & Piece::Occupied) == Piece::Knight) return false;
+			if (targetMoveDirection % 2 == 0 &&//bishop or knight move
+				(move.deltaSource & Piece::Occupied) == Piece::Pawn)
+			{
+				if (blacksTurn)
+				{
+					if (enemyKingPos == move.targetSquare - 7 ||
+						enemyKingPos == move.targetSquare - 9) return false;
+				}
+				else
+				{
+					if (enemyKingPos == move.targetSquare + 7 ||
+						enemyKingPos == move.targetSquare + 9) return false;
+				}
+			}
+			//kings can't attack kings
 		}
-		return true;
-	}
-	if ((move.deltaTarget & Piece::Rook) == Piece::Rook &&//rook-type piece moved
-		moveDirection % 2 == 1)//onto a rank or file with the enemy king
-	{
-		if (moveDirection < 4)//requires forward scan
+		//check for revealed attack
+		//TODO: will not work with en passant double piece removal
+		if (sourceMoveDirection < Move::Knight)
 		{
-			if (firstIndex(boardIntersect(SlideMoves[moveDirection][move.targetSquare], pieceBoards[Piece::IndexAll]))
-				== enemyKingPos) return false;//checking the enemy king isn't quiescent
-		}
-		else//requires backward scan
-		{
-			if (lastIndex(boardIntersect(SlideMoves[moveDirection][move.targetSquare], pieceBoards[Piece::IndexAll]))
-				== enemyKingPos) return false;//checking the enemy king isn't quiescent
+			//TODO: could be made more efficient
+			uc firstHit = sourceMoveDirection < 4 ?
+				firstIndex(boardIntersect(SlideMoves[sourceMoveDirection][enemyKingPos], pieceBoards[Piece::All])) :
+				lastIndex(boardIntersect(SlideMoves[sourceMoveDirection][enemyKingPos], pieceBoards[Piece::All]));
+			if (firstHit == move.sourceSquare)
+			{
+				firstHit = sourceMoveDirection < 4 ?
+					firstIndex(boardIntersect(SlideMoves[sourceMoveDirection][move.sourceSquare], pieceBoards[Piece::All])) :
+					lastIndex(boardIntersect(SlideMoves[sourceMoveDirection][move.sourceSquare], pieceBoards[Piece::All]));
+				if (firstHit == 64) return true;
+				if ((fullBoard[firstHit] & Piece::Team) == blacksTurn)
+				{
+					//the move reveals line of sight to the king.
+					//need to check if its a bishop/rook etc
+					if ((fullBoard[firstHit] & Piece::Bishop) == Piece::Bishop &&
+							sourceMoveDirection % 2 == 0 ||
+						(fullBoard[firstHit] & Piece::Rook) == Piece::Rook &&
+							sourceMoveDirection % 2 == 1)
+					{
+						return false;
+					}
+				}
+			}
 		}
 	}
 	return true;

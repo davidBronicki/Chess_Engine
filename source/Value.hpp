@@ -30,30 +30,6 @@ struct Value
 		return *this;
 	}
 
-	// inline Value slightlyBetter() const
-	// {
-	// 	return better(1);
-	// }
-	// inline Value slightlyWorse() const
-	// {
-	// 	return worse(1);
-	// }
-
-	inline void incrPly()
-	{
-		if (matePlyNumber > 0)
-			++matePlyNumber;
-		else if (matePlyNumber < 0)
-			--matePlyNumber;
-	}
-
-	inline void decrPly()
-	{
-		if (matePlyNumber > 1)
-			--matePlyNumber;
-		else if (matePlyNumber < -1)
-			++matePlyNumber;
-	}
 };
 
 inline bool isNullWindow(Value a, Value b)
@@ -76,7 +52,7 @@ inline Value operator-(Value a)
 
 inline bool operator>(Value a, Value b)
 {
-	return a.materialValue > b.materialValue ||
+	return a.materialValue > b.materialValue && a.matePlyNumber == 0 && b.matePlyNumber == 0 ||
 		a.matePlyNumber != 0 && b.matePlyNumber != 0 &&
 			static_cast<unsigned short>(a.matePlyNumber) < static_cast<unsigned short>(b.matePlyNumber) ||
 		(a.matePlyNumber == 0 || b.matePlyNumber == 0) && a.matePlyNumber > b.matePlyNumber;
