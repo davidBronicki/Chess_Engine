@@ -99,20 +99,23 @@ bool Board::isQuiescent_strong(Move move) const
 
 		//need to check if the piece is checking and
 		//if the move reveals a check
-		us enemyKingPos = firstIndex(pieceBoards[Piece::King | !blacksTurn]);
+		BoardSquare enemyKingPos = firstIndex(pieceBoards[Piece::King | !blacksTurn]);
 
 		//for checking if the piece checks the king
-		uc targetMoveDirection = RelativeDirection[move.targetSquare][enemyKingPos];
+		Move::Direction targetMoveDirection = RelativeDirection[move.targetSquare][enemyKingPos];
 
 		//for checking for revealed check
-		uc sourceMoveDirection = RelativeDirection[enemyKingPos][move.sourceSquare];
-		if ((move.deltaSource & Piece::Sliding))
+		Move::Direction sourceMoveDirection = RelativeDirection[enemyKingPos][move.sourceSquare];
+
+		PieceType newPiece = move.deltaTarget ^ fullBoard[move.targetSquare];
+
+		if ((newPiece & Piece::Sliding))
 		{
 			//rook bishop and queen attacks
 			if (targetMoveDirection < Move::Knight &&
-				((move.deltaSource & Piece::Bishop) == Piece::Bishop &&
+				((newPiece & Piece::Bishop) == Piece::Bishop &&
 					targetMoveDirection % 2 == 0 ||
-				(move.deltaSource & Piece::Rook) == Piece::Rook &&
+				(newPiece & Piece::Rook) == Piece::Rook &&
 					targetMoveDirection % 2 == 1))
 			{
 				if (targetMoveDirection < 4)//requires forward scan
@@ -131,9 +134,9 @@ bool Board::isQuiescent_strong(Move move) const
 		{
 			//pawn, knight, and king attacks
 			if (targetMoveDirection == Move::Knight &&
-				(move.deltaSource & Piece::Occupied) == Piece::Knight) return false;
+				(newPiece & Piece::Occupied) == Piece::Knight) return false;
 			if (targetMoveDirection % 2 == 0 &&//bishop or knight move
-				(move.deltaSource & Piece::Occupied) == Piece::Pawn)
+				(newPiece & Piece::Occupied) == Piece::Pawn)
 			{
 				if (blacksTurn)
 				{
@@ -153,7 +156,7 @@ bool Board::isQuiescent_strong(Move move) const
 		if (sourceMoveDirection < Move::Knight)
 		{
 			//TODO: could be made more efficient
-			uc firstHit = sourceMoveDirection < 4 ?
+			BoardSquare firstHit = sourceMoveDirection < 4 ?
 				firstIndex(boardIntersect(SlideMoves[sourceMoveDirection][enemyKingPos], pieceBoards[Piece::All])) :
 				lastIndex(boardIntersect(SlideMoves[sourceMoveDirection][enemyKingPos], pieceBoards[Piece::All]));
 			if (firstHit == move.sourceSquare)

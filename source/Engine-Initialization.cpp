@@ -16,7 +16,7 @@ void Engine::initializeGlobals()
 {
 	Board::initializeGlobals();
 
-	evaluationInitialize();
+	AI_Weights::initialize("");
 }
 
 Engine::Engine()

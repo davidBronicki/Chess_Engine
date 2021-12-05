@@ -452,7 +452,7 @@ void Engine::updateUI()
 	if (context->timeSpent != 0)
 	{
 		cout << " nps ";
-		cout << (context->nodesReached * 1000 / context->timeSpent);
+		cout << ((long long)context->nodesReached * 1000 / context->timeSpent);
 	}
 	cout << " hashfull ";
 	cout << (hashTable->getOccupancy() * 1000 / hashTable->getSize());

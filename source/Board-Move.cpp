@@ -1,5 +1,7 @@
 #include "Board.hpp"
 
+#include <x86intrin.h>
+
 #define standardMove {moveType, sourceSquare, targetSquare,\
 	fullBoard[sourceSquare], static_cast<uc>(fullBoard[sourceSquare] ^ fullBoard[targetSquare]),\
 	deltaExtraInfo, static_cast<uc>(nextIrreversiblePly ^ plySinceLastPawnOrCapture)}
@@ -439,6 +441,12 @@ void Board::reverseMove(Move move)
 
 std::vector<Move> Board::generateMoves() const
 {
+	/*
+	try table of possible moves using pext processor instruction
+	viableMoveDestinations = moveTable[_pext_u64(occupancyBoard, pieceHits)] & notFriendlyBoard;
+
+	excellent for sliding pieces and potentially useful for pawn moves
+	*/
 	std::vector<Move> output;
 	addKnightMoves(output);
 	addBishopMoves(output);
