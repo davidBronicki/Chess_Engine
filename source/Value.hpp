@@ -1,6 +1,8 @@
 #pragma once
 
 #include <math.h>
+#include <iostream>
+// #include <compare>
 
 struct Value
 {
@@ -30,6 +32,19 @@ struct Value
 		return *this;
 	}
 
+	// inline bool operator==(Value other) const
+	// {
+	// 	return materialValue == other.materialValue && matePlyNumber == other.matePlyNumber;
+	// }
+
+	// inline auto operator<=>(Value other) const
+	// {
+	// 	return a.materialValue > b.materialValue && a.matePlyNumber == 0 && b.matePlyNumber == 0 ||
+	// 		a.matePlyNumber != 0 && b.matePlyNumber != 0 &&
+	// 			static_cast<unsigned short>(a.matePlyNumber) < static_cast<unsigned short>(b.matePlyNumber) ||
+	// 		(a.matePlyNumber == 0 || b.matePlyNumber == 0) && a.matePlyNumber > b.matePlyNumber;
+	// }
+
 };
 
 inline bool isNullWindow(Value a, Value b)
@@ -40,15 +55,20 @@ inline bool isNullWindow(Value a, Value b)
 		std::abs(a.matePlyNumber - b.matePlyNumber) <= 3;
 }
 
+inline Value operator-(Value a)
+{
+	return {-a.materialValue, -a.matePlyNumber};
+}
+
 inline bool operator==(Value a, Value b)
 {
 	return a.materialValue == b.materialValue && a.matePlyNumber == b.matePlyNumber;
 }
 
-inline Value operator-(Value a)
-{
-	return {-a.materialValue, -a.matePlyNumber};
-}
+// inline bool operator!=(Value a, Value b)
+// {
+// 	return !(a == b);
+// }
 
 inline bool operator>(Value a, Value b)
 {
@@ -71,4 +91,18 @@ inline bool operator>=(Value a, Value b)
 inline bool operator<=(Value a, Value b)
 {
 	return !(a > b);
+}
+
+inline std::ostream& operator<<(std::ostream& os, Value value)
+{
+	if (value.matePlyNumber == 0)
+	{
+		os << value.materialValue;
+	}
+	else
+	{
+		os << "M";
+		os << value.matePlyNumber;
+	}
+	return os;
 }

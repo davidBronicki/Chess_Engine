@@ -1,5 +1,7 @@
 #include "Evaluation.hpp"
 
+// #include <iostream>
+
 using namespace std;
 
 string AI_Weights::file;
@@ -44,10 +46,18 @@ void AI_Weights::initialize(std::string pathToWeights)
 
 				case 3:
 				pieceBoardPositionWeights[Piece::Pawn | Piece::Black][i] = -1200;
+				if (file >= 2 && file <= 5)
+				{
+					pieceBoardPositionWeights[Piece::Pawn | Piece::White][i] = 1100;
+				}
 				break;
 
 				case 4:
 				pieceBoardPositionWeights[Piece::Pawn | Piece::White][i] = 1200;
+				if (file >= 2 && file <= 5)
+				{
+					pieceBoardPositionWeights[Piece::Pawn | Piece::Black][i] = -1100;
+				}
 				break;
 
 				case 5:
@@ -61,21 +71,13 @@ void AI_Weights::initialize(std::string pathToWeights)
 
 			pieceBoardPositionWeights[Piece::Bishop | Piece::White][i] = 3250;
 			pieceBoardPositionWeights[Piece::Bishop | Piece::Black][i] = -3250;
-			if (rank == 0)
-			{
-				pieceBoardPositionWeights[Piece::Bishop | Piece::White][i] = 3150;
-			}
-			else if (rank == 7)
-			{
-				pieceBoardPositionWeights[Piece::Bishop | Piece::Black][i] = -3150;
-			}
 
 			pieceBoardPositionWeights[Piece::Knight | Piece::White][i] = 3000;
 			pieceBoardPositionWeights[Piece::Knight | Piece::Black][i] = -3000;
 			if (rank >= 2 && rank <= 5 && file >= 2 && file <= 5)
 			{
-				pieceBoardPositionWeights[Piece::Knight | Piece::White][i] = 3100;
-				pieceBoardPositionWeights[Piece::Knight | Piece::Black][i] = -3100;
+				pieceBoardPositionWeights[Piece::Knight | Piece::White][i] += 100;
+				pieceBoardPositionWeights[Piece::Knight | Piece::Black][i] += -100;
 			}
 
 			pieceBoardPositionWeights[Piece::Rook | Piece::White][i] = 5000;
@@ -83,6 +85,17 @@ void AI_Weights::initialize(std::string pathToWeights)
 
 			pieceBoardPositionWeights[Piece::Queen | Piece::White][i] = 9000;
 			pieceBoardPositionWeights[Piece::Queen | Piece::Black][i] = -9000;
+
+			if (rank == 0)//prefer things out than in
+			{
+				pieceBoardPositionWeights[Piece::Bishop | Piece::White][i] -= 50;
+				pieceBoardPositionWeights[Piece::Knight | Piece::White][i] -= 50;
+			}
+			else if (rank == 7)
+			{
+				pieceBoardPositionWeights[Piece::Bishop | Piece::Black][i] -= -50;
+				pieceBoardPositionWeights[Piece::Knight | Piece::Black][i] -= -50;
+			}
 
 			pieceBoardPositionWeights[Piece::King | Piece::White][i] = 0;
 			pieceBoardPositionWeights[Piece::King | Piece::Black][i] = 0;
@@ -294,32 +307,48 @@ long long AI_Weights::evaulate(Board const& board)
 	long long output = 0;
 	for (int i = 0; i < 64; ++i)
 	{
-		if ((board.fullBoard[i] & Piece::Pawn) == Piece::Pawn)
-		{
-			if ((board.fullBoard[i] & Piece::Team) == Piece::Black)
-			{
-				output += blackPawnValue(board.fullBoard, i);
-			}
-			else
-			{
-				output += whitePawnValue(board.fullBoard, i);
-			}
-		}
-		else
-		{
-			output += pieceValue(board.fullBoard, i);
-		}
+		// if ((board.fullBoard[i] & Piece::Pawn) == Piece::Pawn)
+		// {
+		// 	if ((board.fullBoard[i] & Piece::Team) == Piece::Black)
+		// 	{
+		// 		output += blackPawnValue(board.fullBoard, i);
+		// 	}
+		// 	else
+		// 	{
+		// 		output += whitePawnValue(board.fullBoard, i);
+		// 	}
+		// }
+		output += pieceValue(board.fullBoard, i);
 	}
+
+	// output += 1000 * cardinality(board.pieceBoards[Piece::Pawn | Piece::White]);
+	// output += 3000 * cardinality(board.pieceBoards[Piece::Knight | Piece::White]);
+	// output += 3000 * cardinality(board.pieceBoards[Piece::Bishop | Piece::White]);
+	// output += 5000 * cardinality(board.pieceBoards[Piece::Rook | Piece::White]);
+	// output += 9000 * cardinality(board.pieceBoards[Piece::Queen | Piece::White]);
+
+	// output -= 1000 * cardinality(board.pieceBoards[Piece::Pawn | Piece::Black]);
+	// output -= 3000 * cardinality(board.pieceBoards[Piece::Knight | Piece::Black]);
+	// output -= 3000 * cardinality(board.pieceBoards[Piece::Bishop | Piece::Black]);
+	// output -= 5000 * cardinality(board.pieceBoards[Piece::Rook | Piece::Black]);
+	// output -= 9000 * cardinality(board.pieceBoards[Piece::Queen | Piece::Black]);
+
+	output += 500;
+
+	// cout << output << endl;
+
 	return output;
 }
 
 long AI_Weights::captureDelta(Board const& board, Move move)
 {
-	if (((move.deltaSource ^ move.deltaTarget) & Piece::Team))
-		return pieceBoardPositionWeights[move.deltaSource ^ move.deltaTarget][move.targetSquare];
-	else
-		return pieceBoardPositionWeights[move.deltaSource ^ move.deltaTarget][move.targetSquare]
-			- pieceBoardPositionWeights[move.deltaSource][move.sourceSquare];
+	// if (((move.deltaSource ^ move.deltaTarget) & Piece::Team))
+	// 	return pieceBoardPositionWeights[move.deltaSource ^ move.deltaTarget][move.targetSquare];
+	// else
+	// 	return pieceBoardPositionWeights[move.deltaSource ^ move.deltaTarget][move.targetSquare]
+	// 		- pieceBoardPositionWeights[move.deltaSource][move.sourceSquare];
+	return pieceBoardPositionWeights[move.deltaSource ^ move.deltaTarget][move.targetSquare]
+		- pieceBoardPositionWeights[move.deltaSource][move.sourceSquare];
 }
 
 // void evaluationInitialize(std::string pathToWeights)

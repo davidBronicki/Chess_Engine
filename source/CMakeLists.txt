@@ -16,6 +16,6 @@ file(GLOB Main_Code_Pile
 
 add_executable(bronicki_engine ${Main_Code_Pile})
 
-set_target_properties(bronicki_engine PROPERTIES CXX_STANDARD 20)
+set_target_properties(bronicki_engine PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
 
 target_link_libraries(bronicki_engine Threads::Threads)

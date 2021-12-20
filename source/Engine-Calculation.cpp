@@ -7,7 +7,7 @@
 
 #include <math.h>
 #include <algorithm>
-#include <iostream>
+// #include <iostream>
 #include <chrono>
 
 using namespace std;
@@ -201,7 +201,7 @@ uc Engine::windowQuiescenceSearch(
 			return HashBoard::Quiescence_PV;
 		}
 	}
-	if (legalMoveExists && !nonQuiescentMoveExists) // game has reached a quiescent position
+	if (!nonQuiescentMoveExists) // game has reached a quiescent position
 	{
 		Value value{evaluate(*board)};
 		if (value <= alpha)
@@ -257,7 +257,10 @@ Value Engine::quiescenceSearch(
 	}
 
 	if (alpha >= beta) // null move (not taking) fails high
+	{
+		// cout << alpha << endl;
 		return -beta;
+	}
 
 	vector<Move> moves(board->generateMoves());
 
@@ -557,10 +560,11 @@ vector<tuple<Value, Move>> Engine::rootSearch(PlyType searchDepth)
 void Engine::calculationLoop(Engine *engine)
 {
 	//setup search depth
-	PlyType searchDepth = engine->context->infiniteFlag || engine->context->maxDepth == 0 ?
-		// INT16_MAX :
-		5 :
-		engine->context->maxDepth;
+	// PlyType searchDepth = engine->context->infiniteFlag || engine->context->maxDepth == 0 ?
+	// 	// INT16_MAX :
+	// 	5 :
+	// 	engine->context->maxDepth;
+	PlyType searchDepth = engine->context->searchDepth;
 
 	PlyType initialSearchDepth = searchDepth % engine->context->depthWalkValue;
 	initialSearchDepth = initialSearchDepth == 0 ? engine->context->depthWalkValue : initialSearchDepth;
@@ -580,7 +584,6 @@ void Engine::calculationLoop(Engine *engine)
 		 currentSearchDepth += engine->context->depthWalkValue)
 	{
 		auto info = engine->rootSearch(currentSearchDepth);
-
 
 		auto bestTuple = info[0];
 
