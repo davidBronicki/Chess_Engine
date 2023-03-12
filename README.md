@@ -164,7 +164,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-David Bronicki - dbronick@go.olemiss.edu
+David Bronicki - davidbron15@gmail.com
 
 Project Link: [https://github.com/davidBronicki/Chess_Engine](https://github.com/davidBronicki/Chess_Engine)
 
